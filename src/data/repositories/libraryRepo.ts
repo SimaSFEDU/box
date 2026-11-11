@@ -52,6 +52,8 @@ export interface ListFilter {
   favorite?: boolean;
   inbox?: boolean;
   archived?: boolean;
+  /** Show trashed items instead of live ones. */
+  trash?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -69,8 +71,8 @@ export function toFtsQuery(input: string): string | null {
 export function createLibraryRepo(db: SqlExecutor) {
   return {
     async list(f: ListFilter = {}): Promise<LibraryItemSummary[]> {
-      const where = ['li.deleted_at IS NULL', 'li.archived = ?'];
-      const params: (string | number)[] = [f.archived ? 1 : 0];
+      const where = f.trash ? ['li.deleted_at IS NOT NULL'] : ['li.deleted_at IS NULL', 'li.archived = ?'];
+      const params: (string | number)[] = f.trash ? [] : [f.archived ? 1 : 0];
       if (f.kind) {
         where.push('li.kind = ?');
         params.push(f.kind);

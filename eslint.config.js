@@ -3,7 +3,7 @@ const expoConfig = require('eslint-config-expo/flat');
 
 module.exports = defineConfig([
   expoConfig,
-  { ignores: ['dist/*', 'android/*', 'ios/*', 'modules/*/build/*'] },
+  { ignores: ['dist/*', 'android/*', 'ios/*', 'modules/*/build/*', '**/*.generated.ts'] },
   {
     // Layering rules — see docs/ARCHITECTURE.md §2.
     files: ['src/app/**', 'src/ui/**'],

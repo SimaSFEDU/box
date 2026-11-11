@@ -1,11 +1,11 @@
 import { FlashList } from '@shopify/flash-list';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useLibraryQuery, type LibraryScope } from '../../features/library/useLibraryQuery';
-import { EmptyState, ErrorView, Icon, ItemRow, SegmentedControl, Text } from '../../ui/components';
+import { useLibraryQuery, type LibraryFilter, type LibraryScope } from '../../features/library/useLibraryQuery';
+import { Chip, EmptyState, ErrorView, Icon, ItemRow, PressableScale, SegmentedControl, Text } from '../../ui/components';
 import { useTheme } from '../../ui/theme/ThemeProvider';
 
 const SEGMENTS: { value: LibraryScope; label: string }[] = [
@@ -19,7 +19,9 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const [scope, setScope] = useState<LibraryScope>('all');
   const [query, setQuery] = useState('');
-  const { items, error, loading, reload } = useLibraryQuery(scope, query);
+  const [filter, setFilter] = useState<LibraryFilter>('none');
+  const { items, error, loading, reload } = useLibraryQuery(scope, query, filter);
+  const toggle = (f: LibraryFilter) => setFilter((cur) => (cur === f ? 'none' : f));
 
   useFocusEffect(
     useCallback(() => {
@@ -30,9 +32,14 @@ export default function LibraryScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ padding: spacing.lg, gap: spacing.md }}>
-        <Text variant="display" accessibilityRole="header">
-          Library
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text variant="display" accessibilityRole="header">
+            Library
+          </Text>
+          <PressableScale accessibilityLabel="Корзина" onPress={() => router.push('/trash')} style={{ padding: spacing.sm }}>
+            <Icon name="trash-2" size={20} color={colors.secondary} />
+          </PressableScale>
+        </View>
         <View
           style={{
             flexDirection: 'row',
@@ -57,6 +64,10 @@ export default function LibraryScreen() {
           />
         </View>
         <SegmentedControl segments={SEGMENTS} value={scope} onChange={setScope} />
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Chip label="Избранное" icon="star" selected={filter === 'favorites'} onPress={() => toggle('favorites')} />
+          <Chip label="Архив" icon="archive" selected={filter === 'archive'} onPress={() => toggle('archive')} />
+        </View>
       </View>
       {error ? (
         <ErrorView error={error} onRetry={reload} />
@@ -65,12 +76,21 @@ export default function LibraryScreen() {
           data={items}
           keyExtractor={(i) => i.id}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120 }}
-          renderItem={({ item }) => <ItemRow item={item} />}
+          renderItem={({ item }) => (
+            <ItemRow
+              item={item}
+              onPress={item.kind === 'note' ? () => router.push({ pathname: '/note/[id]', params: { id: item.id } }) : undefined}
+            />
+          )}
           ListEmptyComponent={
-            loading ? null : query ? (
+            loading ? null : query && filter === 'none' ? (
               <EmptyState icon="search" title="Ничего не найдено" message="Попробуйте другой запрос." />
             ) : (
-              <EmptyState icon="book" title="Библиотека пуста" message="Заметки и сохранённые материалы появятся здесь." />
+              <EmptyState
+                icon={filter === 'archive' ? 'archive' : filter === 'favorites' ? 'star' : 'book'}
+                title={filter === 'archive' ? 'Архив пуст' : filter === 'favorites' ? 'Нет избранного' : 'Библиотека пуста'}
+                message={filter === 'none' ? 'Заметки и сохранённые материалы появятся здесь.' : undefined}
+              />
             )
           }
         />

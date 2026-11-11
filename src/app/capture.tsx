@@ -1,8 +1,12 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { toAppError } from '../core/errors';
+import type { NoteFormat } from '../data/repositories/notesRepo';
+import { createNote } from '../features/notes/notesService';
 import { Icon, PressableScale, Text, type IconName } from '../ui/components';
 import { useTheme } from '../ui/theme/ThemeProvider';
 
@@ -10,23 +14,36 @@ interface CaptureOption {
   key: string;
   label: string;
   icon: IconName;
-  /** Route to open; `null` = module not built yet (shown disabled, never faked). */
-  href: null;
+  /** What to create; `null` = module not built yet (shown disabled, never faked). */
+  note: NoteFormat | null;
   accent?: 'vault' | 'media';
 }
 
 const OPTIONS: CaptureOption[] = [
-  { key: 'note', label: 'Заметка', icon: 'edit-3', href: null },
-  { key: 'markdown', label: 'Markdown', icon: 'hash', href: null },
-  { key: 'clip', label: 'Клип', icon: 'link', href: null },
-  { key: 'reminder', label: 'Напоминание', icon: 'bell', href: null },
-  { key: 'media', label: 'Private Media', icon: 'image', href: null, accent: 'media' },
-  { key: 'vault', label: 'Vault', icon: 'lock', href: null, accent: 'vault' },
+  { key: 'note', label: 'Заметка', icon: 'edit-3', note: 'text' },
+  { key: 'markdown', label: 'Markdown', icon: 'hash', note: 'markdown' },
+  { key: 'checklist', label: 'Чек-лист', icon: 'check-square', note: 'checklist' },
+  { key: 'clip', label: 'Клип', icon: 'link', note: null },
+  { key: 'reminder', label: 'Напоминание', icon: 'bell', note: null },
+  { key: 'media', label: 'Private Media', icon: 'image', note: null, accent: 'media' },
+  { key: 'vault', label: 'Vault', icon: 'lock', note: null, accent: 'vault' },
 ];
 
 export default function CaptureSheet() {
   const { colors, spacing, radius } = useTheme();
   const insets = useSafeAreaInsets();
+  const [busy, setBusy] = useState(false);
+  const create = async (format: NoteFormat) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const id = await createNote(format);
+      router.replace({ pathname: '/note/[id]', params: { id } });
+    } catch (e) {
+      setBusy(false);
+      Alert.alert('Clipbox', toAppError(e, 'DB_QUERY_FAILED', 'Не удалось создать заметку').userMessage);
+    }
+  };
   return (
     <View style={StyleSheet.absoluteFill}>
       <Animated.View entering={FadeIn.duration(150)} style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]}>
@@ -52,14 +69,14 @@ export default function CaptureSheet() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
           {OPTIONS.map((o) => {
             const accent = o.accent ? colors[o.accent] : colors.primary;
-            const enabled = o.href !== null;
+            const enabled = o.note !== null;
             return (
               <PressableScale
                 key={o.key}
                 disabled={!enabled}
                 accessibilityLabel={o.label}
                 accessibilityState={{ disabled: !enabled }}
-                onPress={() => enabled && router.replace(o.href!)}
+                onPress={() => o.note && create(o.note)}
                 style={{
                   width: '31.5%',
                   aspectRatio: 1.1,
@@ -78,7 +95,7 @@ export default function CaptureSheet() {
           })}
         </View>
         <Text variant="caption" tone="secondary" style={{ textAlign: 'center' }}>
-          Создание элементов появится по мере готовности модулей
+          Остальные разделы появятся в следующих обновлениях
         </Text>
       </Animated.View>
     </View>

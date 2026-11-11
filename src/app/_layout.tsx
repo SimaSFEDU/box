@@ -22,6 +22,8 @@ function Navigator() {
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="trash" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen
           name="capture"
           options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}

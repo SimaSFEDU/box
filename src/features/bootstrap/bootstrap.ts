@@ -5,6 +5,7 @@ import { setRandomSource } from '../../core/ulid';
 import { initDatabase } from '../../data/db/database';
 import { ensureStorage, runFileGc } from '../../data/files/storage';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { purgeExpiredTrash } from '../notes/notesService';
 
 const log = createLogger('bootstrap');
 
@@ -15,5 +16,7 @@ export async function bootstrap(): Promise<void> {
   ensureStorage();
   await useSettingsStore.getState().load();
   // Non-critical housekeeping must never block startup.
-  runFileGc(db).catch((e) => log.warn('file gc failed', e));
+  purgeExpiredTrash()
+    .then(() => runFileGc(db))
+    .catch((e) => log.warn('housekeeping failed', e));
 }

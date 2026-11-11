@@ -9,3 +9,5 @@ export * from './Screen';
 export * from './Section';
 export * from './SegmentedControl';
 export * from './Text';
+export * from './ActionSheet';
+export * from './Chip';

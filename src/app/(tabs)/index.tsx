@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
+import type { LibraryItemSummary } from '../../data/repositories/libraryRepo';
 import type { HomeBlockId } from '../../data/repositories/settingsRepo';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -14,6 +15,10 @@ function greeting(d = new Date()): string {
   if (h < 12) return 'Доброе утро';
   if (h < 18) return 'Добрый день';
   return 'Добрый вечер';
+}
+
+function openItem(i: LibraryItemSummary) {
+  if (i.kind === 'note') router.push({ pathname: '/note/[id]', params: { id: i.id } });
 }
 
 export default function HomeScreen() {
@@ -46,7 +51,7 @@ export default function HomeScreen() {
           <Section key={id} title={`Inbox · ${home.counts.inbox}`}>
             <Card style={{ paddingVertical: spacing.sm }}>
               {home.inbox.map((i) => (
-                <ItemRow key={i.id} item={i} />
+                <ItemRow key={i.id} item={i} onPress={() => openItem(i)} />
               ))}
             </Card>
           </Section>
@@ -58,7 +63,7 @@ export default function HomeScreen() {
           <Section key={id} title="Недавние">
             <Card style={{ paddingVertical: spacing.sm }}>
               {home.recent.map((i) => (
-                <ItemRow key={i.id} item={i} />
+                <ItemRow key={i.id} item={i} onPress={() => openItem(i)} />
               ))}
             </Card>
           </Section>
@@ -68,7 +73,7 @@ export default function HomeScreen() {
           <Section key={id} title="Избранное">
             <Card style={{ paddingVertical: spacing.sm }}>
               {home.favorites.map((i) => (
-                <ItemRow key={i.id} item={i} />
+                <ItemRow key={i.id} item={i} onPress={() => openItem(i)} />
               ))}
             </Card>
           </Section>
