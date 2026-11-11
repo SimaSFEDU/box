@@ -58,6 +58,7 @@ export default function ShareScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
   const [saved, setSaved] = useState<SaveOutcome[] | null>(null);
+  const [dest, setDest] = useState<'library' | 'private'>('library');
   const key = useMemo(() => JSON.stringify(sharedPayloads), [sharedPayloads]);
 
   useEffect(() => {
@@ -73,8 +74,15 @@ export default function ShareScreen() {
 
   const single = items?.length === 1 ? items[0] : undefined;
 
+  const allFiles = !!items?.length && items.every((i) => i.kind === 'file');
+
   const save = async () => {
     if (!items?.length) return;
+    if (dest === 'private') {
+      // Payloads stay in place; the secure screen encrypts them straight from their content:// streams.
+      router.replace('/private/media/share-import');
+      return;
+    }
     setSaving(true);
     setError(null);
     const opts = { note, collectionIds: collections };
@@ -194,9 +202,9 @@ export default function ShareScreen() {
             <View style={{ gap: spacing.sm }}>
               <Text variant="label" tone="secondary">Куда</Text>
               <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
-                <Chip label="Библиотека (Inbox)" icon="inbox" selected onPress={() => undefined} />
-                <View style={{ opacity: 0.45 }}>
-                  <Chip label="Private Media — скоро" icon="lock" onPress={() => undefined} />
+                <Chip label="Библиотека (Inbox)" icon="inbox" selected={dest === 'library'} onPress={() => setDest('library')} />
+                <View style={{ opacity: allFiles ? 1 : 0.45 }}>
+                  <Chip label="Private Media" icon="lock" selected={dest === 'private'} onPress={() => allFiles && setDest('private')} />
                 </View>
               </View>
             </View>

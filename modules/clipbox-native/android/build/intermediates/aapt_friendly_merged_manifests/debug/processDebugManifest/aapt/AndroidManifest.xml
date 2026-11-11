@@ -4,4 +4,14 @@
 
     <uses-sdk android:minSdkVersion="29" />
 
+    <application>
+
+        <!-- Private Media: not exported; only /s/ share copies are ever granted (per-URI, read-only). -->
+        <provider
+            android:name="app.clipbox.nativemodule.SecureMediaProvider"
+            android:authorities="dollar_openBracket_applicationId_closeBracket.securemedia"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
+
 </manifest>

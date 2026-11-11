@@ -11,7 +11,7 @@ EAS, отчёт «реализовано / протестировано / ост
 | **4. Clips & Share** ✅ | Native Share Intent (text, image, video, pdf, multiple), share-экран, классификатор URL, MetadataQueue (OG/oEmbed, SSRF-фильтр), превью, Inbox, категории, дедуп по canonical URL | Ручной прогон из Chrome, YouTube, TikTok, Reddit, Telegram, галереи; офлайн сохранение работает |
 | **5. Reminders** ✅ | Модель + `nextOccurrence` (100% unit-покрытие: DST, 31-е, високосный), планирование, reconcile, действия в уведомлении, разрешения, привязка к элементам | Срабатывание после перезагрузки, смены зоны, в Doze (ручной тест) |
 | **6. Vault** ✅ | 6a: native crypto core (Tink, Keystore, Argon2id, обёртки, LockManager) + JUnit; 6b: setup/unlock/recovery UX; 6c: записи, генератор, буфер, поиск | Пункты 1,2,4–12,14 тест-плана SECURITY §12 |
-| **7. Private Media** | Streaming store, импорт из Share без открытых копий, миниатюры, SecureMediaProvider, галерея/просмотрщик/видео/GIF, коллекции, мультивыбор, отправка, `.cbvault` бэкап | Пункты 2,3,5,11,13 тест-плана; видео 2 ГБ без OOM |
+| **7. Private Media** ✅ | Streaming store, импорт из Share без открытых копий, миниатюры, SecureMediaProvider, галерея/просмотрщик/видео/GIF, коллекции, мультивыбор, отправка, `.cbvault` бэкап | Пункты 2,3,5,11,13 тест-плана; видео 2 ГБ без OOM |
 | **8. Полировка** | UX-аудит, анимации, empty/error states, accessibility (TalkBack), профилирование (старт, списки 10k), офлайн-прогон, Maestro e2e, release build (R8, подпись, AAB) | Все критерии готовности из промпта |
 
 ## Риски

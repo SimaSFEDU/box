@@ -34,6 +34,23 @@ export interface PasswordOptions {
   avoidAmbiguous: boolean;
 }
 
+export interface ImportedMedia {
+  blobName: string;
+  thumbName: string | null;
+  size: number;
+  mime: string;
+  sha256: string;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+}
+
+export interface RestoredBackup {
+  vault: { id: string; json: string }[];
+  collections: { id: string; json: string }[];
+  media: (ImportedMedia & { id: string; meta: string | null })[];
+}
+
 /** Native API (Kotlin: ClipboxVaultModule). All keys stay native; strings are base64 ciphertext. */
 export interface ClipboxVaultNative {
   isUnlocked(m: ProtectedModule): boolean;
@@ -56,6 +73,14 @@ export interface ClipboxVaultNative {
   open(m: ProtectedModule, ciphertext: string, ad: string): Promise<string>;
   openMany(m: ProtectedModule, items: [string, string][]): Promise<(string | null)[]>;
   generatePassword(o: PasswordOptions): string;
+  mediaToken(): string;
+  mediaAuthority(): string;
+  mediaImport(id: string, sourceUri: string, mimeHint: string | null): Promise<ImportedMedia>;
+  mediaDelete(blob: string | null, thumb: string | null): void;
+  mediaShare(items: { id: string; blob: string; name: string; mime: string }[], title: string): Promise<number>;
+  mediaCleanupShares(): void;
+  backupExport(password: string, vault: [string, string, string][], collections: [string, string, string][], media: [string, string, string, string][]): Promise<string>;
+  backupRestore(sourceUri: string, password: string, skipIds: string[]): Promise<RestoredBackup>;
   copySensitive(text: string, clearAfterMs: number): Promise<void>;
   clearClipboardIfOurs(): Promise<boolean>;
 }

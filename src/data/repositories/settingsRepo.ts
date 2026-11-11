@@ -6,6 +6,7 @@ export interface SettingsShape {
   homeBlocks: { id: HomeBlockId; visible: boolean }[];
   /** Failed master-password attempts (UI throttling against shoulder-surfing/T1, not offline attacks). */
   vaultUnlockFailures: { count: number; until: number };
+  mediaUnlockFailures: { count: number; until: number };
   /** Seconds before a copied secret is cleared from the clipboard. */
   clipboardClearSec: number;
 }
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: SettingsShape = {
     { id: 'private', visible: true },
   ],
   vaultUnlockFailures: { count: 0, until: 0 },
+  mediaUnlockFailures: { count: 0, until: 0 },
   clipboardClearSec: 30,
 };
 

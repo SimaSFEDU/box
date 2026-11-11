@@ -6,4 +6,20 @@
 5-->INJECTED
 5-->INJECTED
 6
-7</manifest>
+7    <application>
+7-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:2:3-9:17
+8
+9        <!-- Private Media: not exported; only /s/ share copies are ever granted (per-URI, read-only). -->
+10        <provider
+10-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:4:5-8:44
+11            android:name="app.clipbox.nativemodule.SecureMediaProvider"
+11-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:5:7-66
+12            android:authorities="${applicationId}.securemedia"
+12-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:6:7-57
+13            android:exported="false"
+13-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:7:7-31
+14            android:grantUriPermissions="true" />
+14-->/home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:8:7-41
+15    </application>
+16
+17</manifest>

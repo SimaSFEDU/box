@@ -1,16 +1,28 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:13-83
-INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:13-83
+ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:1:1-10:12
+INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:1:1-10:12
 	package
-		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+		INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml
 	xmlns:android
-		ADDED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:23-81
+		ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:1:11-69
+application
+ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:2:3-9:17
+provider#app.clipbox.nativemodule.SecureMediaProvider
+ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:4:5-8:44
+	android:grantUriPermissions
+		ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:8:7-41
+	android:authorities
+		ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:6:7-57
+	android:exported
+		ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:7:7-31
+	android:name
+		ADDED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml:5:7-66
 uses-sdk
-INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml reason: use-sdk injection requested
-INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
-INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml
+INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml
 	android:targetSdkVersion
-		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+		INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+		INJECTED from /home/user/box/modules/clipbox-native/android/src/main/AndroidManifest.xml

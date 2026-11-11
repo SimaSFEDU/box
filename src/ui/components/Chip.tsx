@@ -3,7 +3,7 @@ import { Icon, type IconName } from './Icon';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 
-export function Chip({ label, selected, onPress, icon }: { label: string; selected?: boolean; onPress: () => void; icon?: IconName }) {
+export function Chip({ label, selected, onPress, onLongPress, icon }: { label: string; selected?: boolean; onPress: () => void; onLongPress?: () => void; icon?: IconName }) {
   const { colors, radius, spacing } = useTheme();
   return (
     <PressableScale
@@ -11,6 +11,7 @@ export function Chip({ label, selected, onPress, icon }: { label: string; select
       accessibilityState={{ selected: !!selected }}
       accessibilityLabel={label}
       onPress={onPress}
+      onLongPress={onLongPress}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

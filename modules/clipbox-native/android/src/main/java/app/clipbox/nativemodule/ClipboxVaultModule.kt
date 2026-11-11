@@ -48,7 +48,8 @@ class PromptText : Record {
  * wrapped keys, and decrypted record plaintext only when it asks to show it.
  */
 class ClipboxVaultModule : Module() {
-  private val session = VaultSession()
+  private val session get() = Protected.session
+  private val media by lazy { MediaStorage(appContext.reactContext!!.applicationContext) }
   private val clipboard by lazy { SecureClipboard(appContext.reactContext!!.applicationContext) }
   private val handler = Handler(Looper.getMainLooper())
   private val backgroundLockMs = HashMap<String, Long>()
@@ -73,6 +74,7 @@ class ClipboxVaultModule : Module() {
       throw VaultException("CRYPTO_AUTH_FAILED", "verification failed")
     }
     session.unlock(module, dek)
+    if (module == "media") Protected.rotateMediaToken()
   }
 
   private fun activity(): FragmentActivity =
@@ -87,9 +89,13 @@ class ClipboxVaultModule : Module() {
       val now = ArrayList<String>()
       session.unlockedModules().forEach { m -> if ((backgroundLockMs[m] ?: 0L) <= 0L) now.add(m) }
       now.forEach { session.lock(it) }
+      if ("media" in now) Protected.rotateMediaToken()
       val delayed = session.unlockedModules()
       if (delayed.isNotEmpty()) {
-        backgroundLock = Runnable { delayed.forEach { session.lock(it) } }.also { r ->
+        backgroundLock = Runnable {
+          delayed.forEach { session.lock(it) }
+          Protected.rotateMediaToken()
+        }.also { r ->
           handler.postDelayed(r, delayed.maxOf { backgroundLockMs[it] ?: 0L })
         }
       }
@@ -99,6 +105,7 @@ class ClipboxVaultModule : Module() {
       backgroundLock?.let { handler.removeCallbacks(it) }
       backgroundLock = null
       runCatching { clipboard.clearIfOurs(force = false) }
+      runCatching { media.cleanupShares() }
     }
 
     OnDestroy { session.lockAll() }
@@ -113,10 +120,14 @@ class ClipboxVaultModule : Module() {
 
     Function("touch") { module: String -> session.touch(module) }
 
-    Function("lock") { module: String -> session.lock(module) }
+    Function("lock") { module: String ->
+      session.lock(module)
+      if (module == "media") Protected.rotateMediaToken()
+    }
 
     Function("lockAll") { ->
       session.lockAll()
+      Protected.rotateMediaToken()
       runCatching { clipboard.clearIfOurs(force = true) }
     }
 
@@ -151,6 +162,7 @@ class ClipboxVaultModule : Module() {
             rk.fill(0); rkek.fill(0)
           }
           session.unlock(module, dek.copyOf())
+          if (module == "media") Protected.rotateMediaToken()
           out
         } finally {
           kek.fill(0); dek.fill(0)
@@ -228,25 +240,35 @@ class ClipboxVaultModule : Module() {
     /** Wraps the unlocked DEK with a new biometric-bound Keystore key (shows BiometricPrompt). */
     AsyncFunction("enableBiometric") { module: String, text: PromptText, promise: Promise ->
       checkModule(module)
-      if (!session.isUnlocked(module)) return@AsyncFunction promise.reject("AUTH_REQUIRED", "locked", null)
+      // Snapshot the DEK before showing the prompt: the system dialog may pause the activity, which
+      // triggers background auto-lock. The copy is wiped as soon as the prompt completes.
+      val dek = try {
+        session.withDek(module) { it.copyOf() }
+      } catch (e: VaultSession.LockedException) {
+        return@AsyncFunction promise.reject("AUTH_REQUIRED", "locked", null)
+      }
       val cipher = try {
         KeystoreKeys.encryptCipher(module)
       } catch (e: Exception) {
+        dek.fill(0)
         return@AsyncFunction promise.reject("BIO_UNAVAILABLE", "cannot create biometric key", e)
       }
       BiometricGate.authenticate(activity(), cipher, text.title, text.subtitle, text.negative) { r ->
-        when (r) {
-          is BiometricGate.Result.Success -> try {
-            val wrapped = session.withDek(module) { dek -> KeystoreKeys.packWrapped(r.cipher, r.cipher.doFinal(dek)) }
-            promise.resolve(VaultCrypto.b64(wrapped))
-          } catch (e: Exception) {
-            KeystoreKeys.delete(module)
-            promise.reject("BIO_FAILED", "biometric wrap failed", e)
+        try {
+          when (r) {
+            is BiometricGate.Result.Success -> try {
+              promise.resolve(VaultCrypto.b64(KeystoreKeys.packWrapped(r.cipher, r.cipher.doFinal(dek))))
+            } catch (e: Exception) {
+              KeystoreKeys.delete(module)
+              promise.reject("BIO_FAILED", "biometric wrap failed", e)
+            }
+            else -> {
+              KeystoreKeys.delete(module)
+              rejectBio(promise, r)
+            }
           }
-          else -> {
-            KeystoreKeys.delete(module)
-            rejectBio(promise, r)
-          }
+        } finally {
+          dek.fill(0)
         }
       }
     }.runOnQueue(Queues.MAIN)
@@ -275,6 +297,171 @@ class ClipboxVaultModule : Module() {
         }
       }
     }.runOnQueue(Queues.MAIN)
+
+    // ------------------------------------------------------------------ Private Media
+
+    Function("mediaToken") { -> Protected.mediaToken }
+
+    Function("mediaAuthority") { -> SecureMediaProvider.authority(appContext.reactContext!!) }
+
+    /** Encrypts a picked/shared file (content:// or file://) straight from its stream. */
+    AsyncFunction("mediaImport") { id: String, sourceUri: String, mimeHint: String? ->
+      val ctx = appContext.reactContext!!
+      val uri = android.net.Uri.parse(sourceUri)
+      if (uri.scheme != "content" && uri.scheme != "file") throw VaultException("VALIDATION", "unsupported source")
+      val r = try {
+        requireUnlocked("media") { dek ->
+          media.import(dek, id, mimeHint) { ctx.contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException() }
+        }
+      } catch (e: VaultException) {
+        throw e
+      } catch (e: IllegalArgumentException) {
+        throw VaultException("VALIDATION", "file too large")
+      } catch (e: java.io.FileNotFoundException) {
+        throw VaultException("SOURCE_UNAVAILABLE", "source not readable")
+      }
+      mapOf(
+        "blobName" to r.blobName, "thumbName" to r.thumbName, "size" to r.size.toDouble(), "mime" to r.mime,
+        "sha256" to r.sha256, "width" to r.width, "height" to r.height, "durationMs" to r.durationMs?.toDouble(),
+      )
+    }
+
+    Function("mediaDelete") { blob: String?, thumb: String? -> media.delete(blob, thumb) }
+
+    /** Decrypts to short-lived share copies and opens the system share sheet with read-only grants. */
+    AsyncFunction("mediaShare") { items: List<Map<String, String>>, title: String, promise: Promise ->
+      try {
+        val ctx = appContext.reactContext!!
+        val files = requireUnlocked("media") { dek ->
+          items.map { media.prepareShare(dek, it["id"]!!, it["blob"]!!, it["name"] ?: "file") to (it["mime"] ?: "application/octet-stream") }
+        }
+        val uris = ArrayList(files.map { media.uriForShare(it.first) })
+        val mimes = files.map { it.second }.distinct()
+        val mime = if (mimes.size == 1) mimes[0] else mimes.map { it.substringBefore('/') }.distinct().singleOrNull()?.let { "$it/*" } ?: "*/*"
+        val send = android.content.Intent(if (uris.size == 1) android.content.Intent.ACTION_SEND else android.content.Intent.ACTION_SEND_MULTIPLE).apply {
+          type = mime
+          if (uris.size == 1) putExtra(android.content.Intent.EXTRA_STREAM, uris[0]) else putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
+          clipData = android.content.ClipData.newUri(ctx.contentResolver, "Clipbox", uris[0]).apply { uris.drop(1).forEach { addItem(android.content.ClipData.Item(it)) } }
+          addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = android.content.Intent.createChooser(send, title).apply { addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        val activity = appContext.currentActivity ?: throw VaultException("NO_ACTIVITY", "no activity")
+        activity.runOnUiThread {
+          activity.startActivity(chooser)
+          promise.resolve(uris.size)
+        }
+      } catch (e: VaultException) {
+        promise.reject(e.code, e.message, e)
+      } catch (e: Exception) {
+        promise.reject("SHARE_FAILED", "share failed", e)
+      }
+    }
+
+    Function("mediaCleanupShares") { -> media.cleanupShares() }
+
+    // ------------------------------------------------------------------ Encrypted backup (.cbvault)
+
+    /**
+     * Writes an encrypted backup to cache/backup-out and returns its file:// URI.
+     * Rows: vault = [id, payloadB64, ad]; collections = [id, payloadB64, ad]; media = [id, blob, metaB64, metaAd].
+     */
+    AsyncFunction("backupExport") { password: String, vault: List<List<String>>, collections: List<List<String>>, mediaRows: List<List<String>> ->
+      if (vault.isNotEmpty() && !session.isUnlocked("vault")) throw VaultException("AUTH_REQUIRED", "vault locked")
+      if ((mediaRows.isNotEmpty() || collections.isNotEmpty()) && !session.isUnlocked("media")) throw VaultException("AUTH_REQUIRED", "media locked")
+      media.cleanupShares()
+      val stamp = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+      val out = java.io.File(media.backupDir, "clipbox-private-$stamp.cbvault")
+      val tmp = java.io.File(media.backupDir, out.name + ".tmp")
+      withPassword(password) { pw ->
+        try {
+          tmp.outputStream().buffered(1 shl 16).use { os ->
+            app.clipbox.nativemodule.crypto.BackupFormat.Writer(os, pw, System.currentTimeMillis(), mapOf("vault" to vault.size, "media" to mediaRows.size, "collections" to collections.size)).use { w ->
+              vault.forEach { (id, ct, ad) ->
+                val plain = session.withDek("vault") { dek -> VaultCrypto.open(dek, VaultCrypto.unb64(ct), ad) }
+                w.record(app.clipbox.nativemodule.crypto.BackupFormat.TYPE_VAULT_ENTRY, id, plain); plain.fill(0)
+              }
+              collections.forEach { (id, ct, ad) ->
+                val plain = session.withDek("media") { dek -> VaultCrypto.open(dek, VaultCrypto.unb64(ct), ad) }
+                w.record(app.clipbox.nativemodule.crypto.BackupFormat.TYPE_MEDIA_COLLECTION, id, plain)
+              }
+              mediaRows.forEach { (id, blob, metaCt, metaAd) ->
+                val meta = session.withDek("media") { dek -> VaultCrypto.open(dek, VaultCrypto.unb64(metaCt), metaAd) }
+                w.record(app.clipbox.nativemodule.crypto.BackupFormat.TYPE_MEDIA_META, id, meta)
+                session.withDek("media") { dek ->
+                  media.plaintextChannel(dek, id, blob).use { ch ->
+                    w.record(app.clipbox.nativemodule.crypto.BackupFormat.TYPE_MEDIA_BLOB, id, ch.size(), java.nio.channels.Channels.newInputStream(ch))
+                  }
+                }
+              }
+            }
+          }
+          if (!tmp.renameTo(out)) throw IllegalStateException("rename failed")
+        } catch (e: VaultCrypto.AuthFailedException) {
+          tmp.delete(); throw VaultException("CRYPTO_CORRUPTED", "a record failed authentication")
+        } catch (e: Exception) {
+          tmp.delete(); throw if (e is VaultException) e else VaultException("BACKUP_FAILED", "backup failed", e)
+        }
+      }
+      android.net.Uri.fromFile(out).toString()
+    }
+
+    /**
+     * Verifies the whole backup first (wrong password / tampering / truncation → nothing written), then
+     * restores: vault entries and collections are returned as plaintext JSON for JS to re-seal; media blobs
+     * are re-encrypted with this device's media key. Existing ids are skipped.
+     */
+    AsyncFunction("backupRestore") { sourceUri: String, password: String, skipIds: List<String> ->
+      val ctx = appContext.reactContext!!
+      val uri = android.net.Uri.parse(sourceUri)
+      val skip = skipIds.toHashSet()
+      val fmt = app.clipbox.nativemodule.crypto.BackupFormat
+      withPassword(password) { pw ->
+        var needsVault = false
+        var needsMedia = false
+        try {
+          ctx.contentResolver.openInputStream(uri)!!.buffered(1 shl 16).use { input ->
+            fmt.read(input, pw) { type, _, _, _ ->
+              if (type == fmt.TYPE_VAULT_ENTRY) needsVault = true
+              if (type == fmt.TYPE_MEDIA_BLOB || type == fmt.TYPE_MEDIA_META || type == fmt.TYPE_MEDIA_COLLECTION) needsMedia = true
+            }
+          }
+        } catch (e: VaultCrypto.AuthFailedException) {
+          throw VaultException("CRYPTO_AUTH_FAILED", "wrong password or damaged backup")
+        } catch (e: app.clipbox.nativemodule.crypto.BackupFormat.FormatException) {
+          throw VaultException("VALIDATION", "not a Clipbox backup")
+        }
+        if (needsVault && !session.isUnlocked("vault")) throw VaultException("VAULT_REQUIRED", "unlock vault first")
+        if (needsMedia && !session.isUnlocked("media")) throw VaultException("MEDIA_REQUIRED", "unlock media first")
+
+        val vaultOut = ArrayList<Map<String, String>>()
+        val collOut = ArrayList<Map<String, String>>()
+        val metaById = HashMap<String, String>()
+        val mediaOut = ArrayList<Map<String, Any?>>()
+        val written = ArrayList<Pair<String, String?>>()
+        try {
+          ctx.contentResolver.openInputStream(uri)!!.buffered(1 shl 16).use { input ->
+            fmt.read(input, pw) { type, name, _, content ->
+              if (name in skip) return@read
+              when (type) {
+                fmt.TYPE_VAULT_ENTRY -> vaultOut += mapOf("id" to name, "json" to String(content.readBytes(), Charsets.UTF_8))
+                fmt.TYPE_MEDIA_COLLECTION -> collOut += mapOf("id" to name, "json" to String(content.readBytes(), Charsets.UTF_8))
+                fmt.TYPE_MEDIA_META -> metaById[name] = String(content.readBytes(), Charsets.UTF_8)
+                fmt.TYPE_MEDIA_BLOB -> {
+                  val r = session.withDek("media") { dek -> media.import(dek, name, null) { content } }
+                  written += r.blobName to r.thumbName
+                  mediaOut += mapOf("id" to name, "blobName" to r.blobName, "thumbName" to r.thumbName, "meta" to metaById[name],
+                    "size" to r.size.toDouble(), "mime" to r.mime, "width" to r.width, "height" to r.height, "durationMs" to r.durationMs?.toDouble())
+                }
+              }
+            }
+          }
+        } catch (e: Exception) {
+          written.forEach { (b, t) -> media.delete(b, t) }
+          throw VaultException("RESTORE_FAILED", "restore failed", e)
+        }
+        mapOf("vault" to vaultOut, "collections" to collOut, "media" to mediaOut)
+      }
+    }
 
     Function("disableBiometric") { module: String -> KeystoreKeys.delete(module) }
 

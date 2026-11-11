@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Private Media: not exported; only /s/ share copies are ever granted (per-URI, read-only). -->
+    <provider
+      android:name="app.clipbox.nativemodule.SecureMediaProvider"
+      android:authorities="${applicationId}.securemedia"
+      android:exported="false"
+      android:grantUriPermissions="true" />
+  </application>
+</manifest>

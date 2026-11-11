@@ -110,7 +110,9 @@
             "minSdkVersion": 29
           }
         }
-      ]
+      ],
+      "expo-image",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
