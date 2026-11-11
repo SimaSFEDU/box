@@ -1,9 +1,10 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { View } from 'react-native';
 
-import type { LibraryItemSummary } from '../../data/repositories/libraryRepo';
 import type { HomeBlockId } from '../../data/repositories/settingsRepo';
+import { openItem } from '../../features/library/navigation';
+import { useDataVersion } from '../../stores/dataVersion';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { Card, EmptyState, ErrorView, Icon, ItemRow, Screen, Section, Text } from '../../ui/components';
@@ -17,20 +18,21 @@ function greeting(d = new Date()): string {
   return 'Добрый вечер';
 }
 
-function openItem(i: LibraryItemSummary) {
-  if (i.kind === 'note') router.push({ pathname: '/note/[id]', params: { id: i.id } });
-}
-
 export default function HomeScreen() {
   const { colors, spacing } = useTheme();
   const { home, error, refreshHome } = useLibraryStore();
   const blocks = useSettingsStore((s) => s.settings.homeBlocks);
 
+  const version = useDataVersion((s) => s.version);
   useFocusEffect(
     useCallback(() => {
       refreshHome();
     }, [refreshHome]),
   );
+  // Background changes (metadata fetched, share saved) while Home is visible.
+  useEffect(() => {
+    if (version > 0) void refreshHome();
+  }, [version, refreshHome]);
 
   if (error) {
     return (

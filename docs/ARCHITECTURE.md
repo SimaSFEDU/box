@@ -21,7 +21,7 @@
 | Markdown Source | `TextInput` multiline + собственная панель форматирования (чистые функции над `{text, selection}`) | WYSIWYG-редакторы (TenTap/ProseMirror) отклонены: портят исходный Markdown, противоречат «оригинал в Markdown» |
 | Уведомления | `expo-notifications` (локальные) | Принято, см. §7 |
 | Файлы | `expo-file-system` для Standard; приватные файлы — только через native-модуль | Уточнено |
-| Share Intent | **Собственный Expo Module `clipbox-native`** + Config Plugin | Сторонний `expo-share-intent` отклонён: нам нужно шифровать входящий поток **до** записи на диск (Private Media), а библиотека копирует файл в кэш открытым |
+| Share Intent | **`expo-sharing` (SDK 58, «сырые» payload)** | Пересмотрено в Этапе 4: `getSharedPayloads()` / `useIncomingShare` отдают исходный `content://` URI **без копирования в кэш** (копирует только режим «resolved», который мы не используем). Поэтому один и тот же приём подходит и для клипов, и для Private Media: в Этапе 7 native-модуль будет шифровать поток прямо из этого URI |
 | Биометрия + криптография | Тот же `clipbox-native` (Kotlin): `BiometricPrompt` + `CryptoObject`, Android Keystore, **Google Tink** (AEAD и Streaming AEAD), Argon2id (**Bouncy Castle**) | `expo-local-authentication` и `expo-secure-store` **недостаточны**: первая не привязывает ключ к CryptoObject, вторая не даёт раздельных ключей/политик и потоков |
 | Видео | `expo-video` (ExoPlayer) с `content://` из нашего провайдера | Позволяет потоковую расшифровку без временного файла |
 | Изображения | `expo-image` | GIF/WebP анимация, кэш отключается для приватных URI |
@@ -173,7 +173,21 @@ ID — ULID (сортируемые по времени, генерируютс�
   `[[wikilinks]]` и `![[note]]` сохраняются как есть (поддержка — после MVP).
 - Логика (`src/domain/notes/archive.ts`) чистая и покрыта тестами; I/O — в `archiveService.ts`.
 
-### 6.3 Clips pipeline
+### 6.3 Clips pipeline (реализовано в Этапе 4)
+- Share → `clipbox://expo-sharing` → `/share`. Экран быстрого сохранения: одна кнопка
+  «Сохранить» кладёт всё в Inbox; комментарий и коллекции опциональны. Сеть не нужна.
+- Текст с URL → клип; текст без URL → заметка в Inbox; файлы (изображения, PDF, любые) →
+  копия во внутреннее `attachments/` (лимит 200 МБ) → файловый клип.
+- Дубликаты: по `canonical_url` (нормализация хоста, удаление utm/fbclid/si…, формы YouTube);
+  пользователь видит предупреждение, но может сохранить копию.
+- Метаданные: oEmbed (YouTube, TikTok, Reddit, Spotify, SoundCloud), затем Open Graph / Twitter /
+  `<title>`. Ручные редиректы с SSRF-проверкой каждого шага, таймаут 8 с, HTML ≤ 512 КБ
+  (обрезается), превью ≤ 2 МБ, только image/*. Без cookies. Пользовательский заголовок никогда не
+  перезаписывается. Очередь single-flight: после сохранения, при старте и при возврате в приложение;
+  3 попытки, затем `failed` с кнопкой «Повторить».
+- Превью сохраняется как есть (без ресайза — отдельная зависимость не окупается на MVP).
+
+Исходный план:
 `ShareIntent → classify(url/mime) → create item (inbox=1, meta_status=pending) → UI сразу закрывается
 → MetadataQueue (персистентная, по meta_status) → fetch (timeout 8s, 512KB, только http/https,
 запрет приватных IP) → parse OG/oEmbed → download preview → update`. Очередь продолжается при
@@ -273,6 +287,9 @@ setSecureWindow(on: boolean): void
 - Этап 3: в `expo-sharing` SDK 58 появился приём входящих Share-интентов
   (`getSharedPayloads`). В Этапе 4 он будет оценён для Standard-уровня (клипы); для Private
   Media по-прежнему нужен собственный модуль (шифрование потока до записи на диск).
+- Этап 4: общие операции над элементами (флаги, теги, корзина, удаление с GC файлов) вынесены
+  в `itemsRepo`; `notesRepo` и `clipsRepo` его расширяют. `useAsync` + `useDataVersion` —
+  единый способ загрузки данных на экранах и обновления после фоновых изменений.
 - Нельзя проверить в облачном контейнере: компиляцию Kotlin/Gradle (нет Android SDK) и запуск на
   устройстве. Проверено: `tsc`, ESLint, Jest, `expo export` (Android JS-бандл), `expo prebuild`
   (манифест, autolinking модуля, FTS-флаг).

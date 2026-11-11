@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { toAppError, type AppError } from '../../core/errors';
 import { getDb } from '../../data/db/database';
+import { useDataVersion } from '../../stores/dataVersion';
 import { createLibraryRepo, type ItemKind, type LibraryItemSummary } from '../../data/repositories/libraryRepo';
 
 export type LibraryScope = 'all' | ItemKind;
-export type LibraryFilter = 'none' | 'favorites' | 'archive' | 'trash';
+export type LibraryFilter = 'none' | 'favorites' | 'archive' | 'trash' | 'inbox';
 
 /** Lists library items, or runs FTS search when `query` is non-empty. Debounced, stale responses dropped. */
 export function useLibraryQuery(scope: LibraryScope, query: string, filter: LibraryFilter = 'none') {
@@ -13,6 +14,7 @@ export function useLibraryQuery(scope: LibraryScope, query: string, filter: Libr
   const [error, setError] = useState<AppError | null>(null);
   const [loading, setLoading] = useState(true);
   const seq = useRef(0);
+  const version = useDataVersion((s) => s.version);
 
   const load = useCallback(async () => {
     const id = ++seq.current;
@@ -27,6 +29,7 @@ export function useLibraryQuery(scope: LibraryScope, query: string, filter: Libr
               kind,
               limit: 300,
               favorite: filter === 'favorites',
+              inbox: filter === 'inbox',
               archived: filter === 'archive',
               trash: filter === 'trash',
             });
@@ -39,7 +42,8 @@ export function useLibraryQuery(scope: LibraryScope, query: string, filter: Libr
     } finally {
       if (id === seq.current) setLoading(false);
     }
-  }, [scope, query, filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, query, filter, version]);
 
   useEffect(() => {
     const t = setTimeout(load, query ? 150 : 0);

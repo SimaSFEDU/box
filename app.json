@@ -46,7 +46,30 @@
       ],
       "expo-font",
       "expo-asset",
-      "expo-sharing"
+      [
+        "expo-sharing",
+        {
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "text/plain",
+              "image/*",
+              "video/*",
+              "application/pdf",
+              "*/*"
+            ],
+            "multipleShareMimeTypes": [
+              "image/*",
+              "video/*",
+              "application/pdf",
+              "*/*"
+            ]
+          },
+          "ios": {
+            "enabled": false
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

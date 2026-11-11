@@ -1,6 +1,9 @@
 import { AppError } from '../../core/errors';
 import { ulid } from '../../core/ulid';
-import type { SqlDb, SqlExecutor } from '../db/types';
+import type { SqlDb } from '../db/types';
+import { createItemsRepo, setTagsTx } from './itemsRepo';
+
+export { normalizeTags } from './itemsRepo';
 
 export type NoteFormat = 'text' | 'markdown' | 'checklist';
 
@@ -45,30 +48,10 @@ export interface NewNote {
   updatedAt?: number;
 }
 
-/** Normalises user-entered tag names: trims, strips leading '#', collapses spaces, dedupes case-insensitively. */
-export function normalizeTags(names: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of names) {
-    const name = raw.trim().replace(/^#+/, '').replace(/\s+/g, '-').slice(0, 64);
-    if (!name || seen.has(name.toLowerCase())) continue;
-    seen.add(name.toLowerCase());
-    out.push(name);
-  }
-  return out;
-}
-
-async function setTagsTx(tx: SqlExecutor, itemId: string, names: string[], now: number) {
-  const tags = normalizeTags(names);
-  await tx.run('DELETE FROM item_tags WHERE item_id = ?', [itemId]);
-  for (const name of tags) {
-    await tx.run('INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?) ON CONFLICT(name) DO NOTHING', [ulid(now), name, now]);
-    await tx.run('INSERT OR IGNORE INTO item_tags (item_id, tag_id) SELECT ?, id FROM tags WHERE name = ?', [itemId, name]);
-  }
-}
-
 export function createNotesRepo(db: SqlDb, now: () => number = Date.now) {
+  const items = createItemsRepo(db, now);
   return {
+    ...items,
     async create(n: NewNote = {}): Promise<string> {
       const t = n.createdAt ?? now();
       const id = n.id ?? ulid(t);
@@ -101,10 +84,7 @@ export function createNotesRepo(db: SqlDb, now: () => number = Date.now) {
         [id],
       );
       if (!r) return null;
-      const tags = await db.all<{ name: string }>(
-        'SELECT t.name FROM item_tags it JOIN tags t ON t.id = it.tag_id WHERE it.item_id = ? ORDER BY t.name COLLATE NOCASE',
-        [id],
-      );
+      const tags = await items.getTags(id);
       return {
         id: r.id,
         title: r.title,
@@ -114,7 +94,7 @@ export function createNotesRepo(db: SqlDb, now: () => number = Date.now) {
         archived: r.archived === 1,
         deletedAt: r.deleted_at,
         sourcePath: r.source_path,
-        tags: tags.map((t) => t.name),
+        tags,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       };
@@ -139,55 +119,6 @@ export function createNotesRepo(db: SqlDb, now: () => number = Date.now) {
         await tx.run('UPDATE library_items SET title = ?, updated_at = ? WHERE id = ?', [title, t, id]);
         return true;
       });
-    },
-
-    async setTags(id: string, names: string[]): Promise<void> {
-      await db.transaction(async (tx) => {
-        const t = now();
-        await setTagsTx(tx, id, names, t);
-        await tx.run('UPDATE library_items SET updated_at = ? WHERE id = ?', [t, id]);
-      });
-    },
-
-    async setFlag(id: string, flag: 'favorite' | 'archived' | 'inbox', value: boolean): Promise<void> {
-      // Column name is from a closed union, never user input.
-      await db.run(`UPDATE library_items SET ${flag} = ? WHERE id = ?`, [value ? 1 : 0, id]);
-    },
-
-    async softDelete(id: string): Promise<void> {
-      await db.run('UPDATE library_items SET deleted_at = ? WHERE id = ?', [now(), id]);
-    },
-
-    async restore(id: string): Promise<void> {
-      await db.run('UPDATE library_items SET deleted_at = NULL WHERE id = ?', [id]);
-    },
-
-    /** Hard delete; attachment files are queued for GC and removed after commit by the caller. */
-    async purge(id: string): Promise<string[]> {
-      return db.transaction(async (tx) => {
-        const files = await tx.all<{ rel_path: string }>('SELECT rel_path FROM attachments WHERE item_id = ?', [id]);
-        const t = now();
-        for (const f of files) {
-          await tx.run('INSERT OR IGNORE INTO file_gc (rel_path, queued_at) VALUES (?, ?)', [f.rel_path, t]);
-        }
-        await tx.run('DELETE FROM library_items WHERE id = ?', [id]);
-        return files.map((f) => f.rel_path);
-      });
-    },
-
-    /** Deletes trashed notes older than `olderThanMs`. Returns number purged. */
-    async purgeTrash(olderThanMs: number): Promise<number> {
-      const rows = await db.all<{ id: string }>(
-        "SELECT id FROM library_items WHERE kind = 'note' AND deleted_at IS NOT NULL AND deleted_at < ?",
-        [now() - olderThanMs],
-      );
-      for (const r of rows) await this.purge(r.id);
-      return rows.length;
-    },
-
-    /** Sets updated_at explicitly (used when restoring archives to keep original timestamps). */
-    async touch(id: string, updatedAt: number): Promise<void> {
-      await db.run('UPDATE library_items SET updated_at = ? WHERE id = ?', [updatedAt, id]);
     },
 
     async exists(id: string): Promise<boolean> {
@@ -216,22 +147,6 @@ export function createNotesRepo(db: SqlDb, now: () => number = Date.now) {
       return out;
     },
 
-    async addAttachment(a: { itemId: string | null; relPath: string; originalName: string | null; mime: string; size: number; sha256: string }): Promise<string> {
-      const id = ulid(now());
-      await db.run(
-        'INSERT INTO attachments (id, item_id, rel_path, original_name, mime, size, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, a.itemId, a.relPath, a.originalName, a.mime, a.size, a.sha256, now()],
-      );
-      return id;
-    },
-
-    async listAttachments(itemId: string): Promise<{ relPath: string; originalName: string | null; mime: string }[]> {
-      const rows = await db.all<{ rel_path: string; original_name: string | null; mime: string }>(
-        'SELECT rel_path, original_name, mime FROM attachments WHERE item_id = ? ORDER BY created_at',
-        [itemId],
-      );
-      return rows.map((r) => ({ relPath: r.rel_path, originalName: r.original_name, mime: r.mime }));
-    },
   };
 }
 

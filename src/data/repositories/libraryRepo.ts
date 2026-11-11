@@ -9,6 +9,7 @@ export interface LibraryItemSummary {
   favorite: boolean;
   inbox: boolean;
   updatedAt: number;
+  previewPath: string | null;
   /** Note excerpt or clip URL/description, for list rows. */
   subtitle: string | null;
   contentType: string | null;
@@ -23,6 +24,7 @@ interface Row {
   updated_at: number;
   subtitle: string | null;
   content_type: string | null;
+  preview_path: string | null;
 }
 
 const SELECT = `
@@ -31,7 +33,8 @@ SELECT li.id, li.kind, li.title, li.favorite, li.inbox, li.updated_at,
     WHEN 'note' THEN substr(n.body, 1, 160)
     ELSE COALESCE(c.site_name, c.url, c.description)
   END AS subtitle,
-  c.content_type AS content_type
+  c.content_type AS content_type,
+  c.preview_path AS preview_path
 FROM library_items li
 LEFT JOIN notes n ON n.item_id = li.id
 LEFT JOIN clips c ON c.item_id = li.id`;
@@ -43,6 +46,7 @@ const map = (r: Row): LibraryItemSummary => ({
   favorite: r.favorite === 1,
   inbox: r.inbox === 1,
   updatedAt: r.updated_at,
+  previewPath: r.preview_path,
   subtitle: r.subtitle,
   contentType: r.content_type,
 });
@@ -54,6 +58,7 @@ export interface ListFilter {
   archived?: boolean;
   /** Show trashed items instead of live ones. */
   trash?: boolean;
+  collectionId?: string;
   limit?: number;
   offset?: number;
 }
@@ -79,6 +84,10 @@ export function createLibraryRepo(db: SqlExecutor) {
       }
       if (f.favorite) where.push('li.favorite = 1');
       if (f.inbox) where.push('li.inbox = 1');
+      if (f.collectionId) {
+        where.push('li.id IN (SELECT item_id FROM collection_items WHERE collection_id = ?)');
+        params.push(f.collectionId);
+      }
       params.push(f.limit ?? 50, f.offset ?? 0);
       const rows = await db.all<Row>(
         `${SELECT} WHERE ${where.join(' AND ')} ORDER BY li.updated_at DESC LIMIT ? OFFSET ?`,

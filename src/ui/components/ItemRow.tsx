@@ -1,5 +1,6 @@
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
+import { fileUri } from '../../data/files/storage';
 import type { LibraryItemSummary } from '../../data/repositories/libraryRepo';
 import { useTheme } from '../theme/ThemeProvider';
 import { Icon, type IconName } from './Icon';
@@ -34,13 +35,22 @@ export function ItemRow({ item, onPress }: { item: LibraryItemSummary; onPress?:
       accessibilityLabel={title}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, minHeight: 56 }}
     >
-      <View style={{ width: 36, height: 36, borderRadius: radius.sm, backgroundColor: colors.elevated, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={itemIcon(item)} size={18} color={colors.secondary} />
+      <View style={{ width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.elevated, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {item.previewPath ? (
+          <Image source={{ uri: fileUri(item.previewPath) }} style={{ width: 40, height: 40 }} accessibilityIgnoresInvertColors />
+        ) : (
+          <Icon name={itemIcon(item)} size={18} color={colors.secondary} />
+        )}
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="heading" numberOfLines={1}>
           {title}
         </Text>
+        {item.inbox ? (
+          <Text variant="caption" tone="primary">
+            Inbox
+          </Text>
+        ) : null}
         {item.subtitle ? (
           <Text variant="caption" tone="secondary" numberOfLines={1}>
             {item.subtitle.replace(/\s+/g, ' ')}

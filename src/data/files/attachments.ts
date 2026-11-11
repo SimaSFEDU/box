@@ -2,7 +2,7 @@ import { File } from 'expo-file-system';
 
 import { AppError } from '../../core/errors';
 import { ulid } from '../../core/ulid';
-import type { NotesRepo } from '../repositories/notesRepo';
+import type { ItemsRepo } from '../repositories/itemsRepo';
 import { ensureStorage, fileFor } from './storage';
 
 const EXT_BY_MIME: Record<string, string> = {
@@ -20,17 +20,21 @@ export function safeExtension(name: string | null, mime: string): string {
   return fromName ?? EXT_BY_MIME[mime] ?? 'bin';
 }
 
+export interface StoredFile {
+  relPath: string;
+  size: number;
+  sha256: string;
+}
+
+export const MAX_SHARED_FILE_BYTES = 200 * 1024 * 1024;
+
 /**
- * Copies a picked/shared file into app-private attachments storage (never public dirs) and records it.
- * Copy goes to a temp name first and is renamed only when complete.
+ * Copies a picked/shared file (file:// or content://) into app-private attachments storage —
+ * never into public directories. Copy goes to a temp name and is renamed only when complete.
  */
-export async function importAttachment(
-  repo: NotesRepo,
-  source: File,
-  opts: { itemId: string | null; originalName: string | null; mime: string },
-): Promise<{ id: string; relPath: string }> {
+export async function copyIntoAttachments(source: File, originalName: string | null, mime: string): Promise<StoredFile> {
   ensureStorage();
-  const relPath = `attachments/${ulid()}.${safeExtension(opts.originalName, opts.mime)}`;
+  const relPath = `attachments/${ulid()}.${safeExtension(originalName, mime)}`;
   const target = fileFor(relPath);
   const tmp = new File(target.parentDirectory, `.${target.name}.tmp`);
   try {
@@ -41,14 +45,21 @@ export async function importAttachment(
     if (tmp.exists) tmp.delete();
     throw new AppError('FS_WRITE_FAILED', 'Не удалось сохранить вложение', e);
   }
-  const sha256 = await target.digest('SHA-256');
-  const id = await repo.addAttachment({
-    itemId: opts.itemId,
-    relPath,
-    originalName: opts.originalName,
-    mime: opts.mime,
-    size: target.size ?? 0,
-    sha256,
-  });
-  return { id, relPath };
+  const size = target.size ?? 0;
+  if (size > MAX_SHARED_FILE_BYTES) {
+    target.delete();
+    throw new AppError('VALIDATION', 'Файл слишком большой (максимум 200 МБ)');
+  }
+  return { relPath, size, sha256: await target.digest('SHA-256') };
+}
+
+/** Copies a file into attachments and links it to an item. */
+export async function importAttachment(
+  repo: Pick<ItemsRepo, 'addAttachment'>,
+  source: File,
+  opts: { itemId: string | null; originalName: string | null; mime: string },
+): Promise<{ id: string; relPath: string }> {
+  const stored = await copyIntoAttachments(source, opts.originalName, opts.mime);
+  const id = await repo.addAttachment({ itemId: opts.itemId, originalName: opts.originalName, mime: opts.mime, ...stored });
+  return { id, relPath: stored.relPath };
 }

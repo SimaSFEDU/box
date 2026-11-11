@@ -15,7 +15,7 @@ interface CaptureOption {
   label: string;
   icon: IconName;
   /** What to create; `null` = module not built yet (shown disabled, never faked). */
-  note: NoteFormat | null;
+  note: NoteFormat | 'clip' | null;
   accent?: 'vault' | 'media';
 }
 
@@ -23,7 +23,7 @@ const OPTIONS: CaptureOption[] = [
   { key: 'note', label: 'Заметка', icon: 'edit-3', note: 'text' },
   { key: 'markdown', label: 'Markdown', icon: 'hash', note: 'markdown' },
   { key: 'checklist', label: 'Чек-лист', icon: 'check-square', note: 'checklist' },
-  { key: 'clip', label: 'Клип', icon: 'link', note: null },
+  { key: 'clip', label: 'Клип', icon: 'link', note: 'clip' },
   { key: 'reminder', label: 'Напоминание', icon: 'bell', note: null },
   { key: 'media', label: 'Private Media', icon: 'image', note: null, accent: 'media' },
   { key: 'vault', label: 'Vault', icon: 'lock', note: null, accent: 'vault' },
@@ -33,8 +33,12 @@ export default function CaptureSheet() {
   const { colors, spacing, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
-  const create = async (format: NoteFormat) => {
+  const create = async (format: NoteFormat | 'clip') => {
     if (busy) return;
+    if (format === 'clip') {
+      router.replace('/clip/new');
+      return;
+    }
     setBusy(true);
     try {
       const id = await createNote(format);

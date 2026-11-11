@@ -15,7 +15,7 @@ Clipbox — local-first Android-приложение: заметки и Markdown
 | [docs/SECURITY_DESIGN.md](docs/SECURITY_DESIGN.md) | Модель угроз, иерархия ключей, восстановление, тест-план |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы, критерии приёмки, риски |
 
-Статус: Этапы 2 (инфраструктура) и 3 (заметки и Markdown) завершены.
+Статус: Этапы 2–4 (инфраструктура, заметки и Markdown, клипы и Android Share) завершены.
 
 ## Разработка
 

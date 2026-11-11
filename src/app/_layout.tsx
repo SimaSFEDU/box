@@ -24,6 +24,12 @@ function Navigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="note/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="trash" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="clip/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="clip/new" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="collections" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="collection/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="share" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen name="expo-sharing" />
         <Stack.Screen
           name="capture"
           options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}

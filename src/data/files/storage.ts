@@ -18,6 +18,11 @@ function assertRelPath(rel: string) {
   }
 }
 
+/** file:// URI of a stored file, for <Image> and the Markdown preview. */
+export function fileUri(rel: string): string {
+  return fileFor(rel).uri;
+}
+
 export function fileFor(rel: string): File {
   assertRelPath(rel);
   return new File(Paths.document, rel);
