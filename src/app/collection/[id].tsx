@@ -5,10 +5,9 @@ import { Alert, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '../../core/errors';
-import { getDb } from '../../data/db/database';
-import { createLibraryRepo } from '../../data/repositories/libraryRepo';
 import { collectionsRepo } from '../../features/clips/clipsService';
 import { useAsync } from '../../features/common/useAsync';
+import { listLibrary } from '../../features/library/libraryQueries';
 import { openItem } from '../../features/library/navigation';
 import { useDataVersion } from '../../stores/dataVersion';
 import { ActionSheet, EmptyState, Icon, ItemRow, PressableScale } from '../../ui/components';
@@ -19,7 +18,7 @@ export default function CollectionScreen() {
   const { colors, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const { data } = useAsync(
-    async () => ({ collection: await collectionsRepo().get(id), items: await createLibraryRepo(getDb()).list({ collectionId: id, limit: 500 }) }),
+    async () => ({ collection: await collectionsRepo().get(id), items: await listLibrary({ collectionId: id, limit: 500 }) }),
     [id],
   );
   const collection = data?.collection ?? null;

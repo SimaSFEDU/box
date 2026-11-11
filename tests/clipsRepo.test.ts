@@ -87,3 +87,29 @@ describe('collectionsRepo', () => {
     expect(await cols.search('read')).toHaveLength(1);
   });
 });
+
+import { createNotesRepo } from '../src/data/repositories/notesRepo';
+import { createRemindersRepo } from '../src/data/repositories/remindersRepo';
+
+describe('global search extras (tags, reminders)', () => {
+  it('finds tags with counts, filters by tag, finds reminders, escapes LIKE wildcards', async () => {
+    const { db, lib } = await setup();
+    const notes = createNotesRepo(db);
+    const a = await notes.create({ title: 'A', tags: ['Travel', 'work'] });
+    await notes.create({ title: 'B', tags: ['travel'] });
+    const gone = await notes.create({ title: 'C', tags: ['travel_100%'] });
+    await notes.softDelete(gone);
+    expect(await lib.searchTags('trav')).toEqual([{ name: 'Travel', count: 2 }]);
+    expect(await lib.searchTags('#WORK')).toEqual([{ name: 'work', count: 1 }]);
+    expect(await lib.searchTags('%')).toEqual([]);
+    expect((await lib.list({ tag: 'travel' })).length).toBe(2);
+    expect((await lib.list({ tag: 'work' })).map((i) => i.id)).toEqual([a]);
+
+    const rem = createRemindersRepo(db);
+    await rem.create({ title: 'Позвонить маме', notes: 'про 50% скидку', dueLocal: '2030-01-01T10:00', tz: 'UTC' });
+    expect((await rem.search('МАМЕ')).map((r) => r.title)).toEqual(['Позвонить маме']);
+    expect((await lib.searchTags('TRAVEL')).length).toBe(1);
+    expect((await rem.search('50%')).length).toBe(1);
+    expect(await rem.search('_')).toEqual([]);
+  });
+});

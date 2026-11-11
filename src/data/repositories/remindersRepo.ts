@@ -132,6 +132,14 @@ export function createRemindersRepo(db: SqlDb, now: () => number = Date.now) {
       return (await db.all<Row>(`${SELECT} WHERE r.status != 'done' AND r.next_fire_at IS NOT NULL ORDER BY r.next_fire_at LIMIT ?`, [limit])).map(map);
     },
 
+    /** Small table: filtered in JS (Unicode-aware, unlike SQLite LIKE for non-ASCII). */
+    async search(query: string, limit = 10): Promise<Reminder[]> {
+      const q = query.trim().toLocaleLowerCase();
+      if (!q) return [];
+      const all = (await db.all<Row>(`${SELECT} ORDER BY r.status = 'done', r.next_fire_at`)).map(map);
+      return all.filter((r) => `${r.title}\n${r.notes ?? ''}`.toLocaleLowerCase().includes(q)).slice(0, limit);
+    },
+
     async listOpen(): Promise<Reminder[]> {
       return (await db.all<Row>(`${SELECT} WHERE r.status != 'done'`)).map(map);
     },

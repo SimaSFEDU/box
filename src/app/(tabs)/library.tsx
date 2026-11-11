@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { collectionsRepo } from '../../features/clips/clipsService';
 import { useAsync } from '../../features/common/useAsync';
+import { searchExtras } from '../../features/library/libraryQueries';
 import { openItem } from '../../features/library/navigation';
 import { useLibraryQuery, type LibraryFilter, type LibraryScope } from '../../features/library/useLibraryQuery';
 import { Chip, EmptyState, ErrorView, Icon, ItemRow, PressableScale, SegmentedControl, Text } from '../../ui/components';
@@ -23,8 +24,10 @@ export default function LibraryScreen() {
   const [scope, setScope] = useState<LibraryScope>('all');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<LibraryFilter>('none');
-  const { items, error, loading, reload } = useLibraryQuery(scope, query, filter);
+  const [tag, setTag] = useState<string | null>(null);
+  const { items, error, loading, reload, loadMore } = useLibraryQuery(scope, query, filter, tag);
   const matchingCollections = useAsync(() => collectionsRepo().search(query), [query]).data ?? [];
+  const extras = useAsync(() => searchExtras(query), [query]).data;
   const toggle = (f: LibraryFilter) => setFilter((cur) => (cur === f ? 'none' : f));
 
   useFocusEffect(
@@ -74,6 +77,29 @@ export default function LibraryScreen() {
           <Chip label="Архив" icon="archive" selected={filter === 'archive'} onPress={() => toggle('archive')} />
           <Chip label="Коллекции" icon="folder" onPress={() => router.push('/collections')} />
         </View>
+        {tag ? (
+          <View style={{ flexDirection: 'row' }}>
+            <Chip label={`#${tag} ✕`} icon="hash" selected onPress={() => setTag(null)} />
+          </View>
+        ) : null}
+        {query.trim() && extras?.tags.length ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {extras.tags.map((t) => (
+              <Chip key={t.name} label={`#${t.name} · ${t.count}`} icon="hash" onPress={() => { setTag(t.name); setQuery(''); }} />
+            ))}
+          </View>
+        ) : null}
+        {query.trim() && extras?.reminders.length ? (
+          <View style={{ gap: spacing.xs }}>
+            {extras.reminders.map((r) => (
+              <PressableScale key={r.id} accessibilityLabel={`Напоминание ${r.title}`} onPress={() => router.push({ pathname: '/reminder/[id]', params: { id: r.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 40 }}>
+                <Icon name="bell" size={16} color={colors.primary} />
+                <Text numberOfLines={1} style={{ flex: 1 }}>{r.title}</Text>
+                {r.status === 'done' ? <Text variant="caption" tone="secondary">выполнено</Text> : null}
+              </PressableScale>
+            ))}
+          </View>
+        ) : null}
         {query.trim() && matchingCollections.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             {matchingCollections.map((c) => (
@@ -88,6 +114,8 @@ export default function LibraryScreen() {
         <FlashList
           data={items}
           keyExtractor={(i) => i.id}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120 }}
           renderItem={({ item }) => <ItemRow item={item} onPress={() => openItem(item)} />}
           ListEmptyComponent={

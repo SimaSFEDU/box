@@ -59,6 +59,8 @@ export interface ListFilter {
   /** Show trashed items instead of live ones. */
   trash?: boolean;
   collectionId?: string;
+  /** Exact tag name (case-insensitive). */
+  tag?: string;
   limit?: number;
   offset?: number;
 }
@@ -84,6 +86,10 @@ export function createLibraryRepo(db: SqlExecutor) {
       }
       if (f.favorite) where.push('li.favorite = 1');
       if (f.inbox) where.push('li.inbox = 1');
+      if (f.tag) {
+        where.push('li.id IN (SELECT it.item_id FROM item_tags it JOIN tags t ON t.id = it.tag_id WHERE t.name = ? COLLATE NOCASE)');
+        params.push(f.tag);
+      }
       if (f.collectionId) {
         where.push('li.id IN (SELECT item_id FROM collection_items WHERE collection_id = ?)');
         params.push(f.collectionId);
@@ -105,6 +111,19 @@ export function createLibraryRepo(db: SqlExecutor) {
           COALESCE(SUM(favorite = 1), 0)  AS favorites
         FROM library_items WHERE deleted_at IS NULL AND archived = 0`);
       return r ?? { notes: 0, clips: 0, inbox: 0, favorites: 0 };
+    },
+
+    /** Tags whose name contains the query, with live item counts. Small table: filtered in JS for Unicode-aware case folding. */
+    async searchTags(query: string, limit = 10): Promise<{ name: string; count: number }[]> {
+      const q = query.trim().replace(/^#/, '').toLocaleLowerCase();
+      if (!q) return [];
+      const rows = await db.all<{ name: string; count: number }>(
+        `SELECT t.name, COUNT(li.id) AS count FROM tags t
+         JOIN item_tags it ON it.tag_id = t.id
+         JOIN library_items li ON li.id = it.item_id AND li.deleted_at IS NULL
+         GROUP BY t.id ORDER BY count DESC, t.name`,
+      );
+      return rows.filter((r) => r.name.toLocaleLowerCase().includes(q)).slice(0, limit);
     },
 
     async search(query: string, limit = 50): Promise<LibraryItemSummary[]> {

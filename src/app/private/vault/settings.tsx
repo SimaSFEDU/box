@@ -4,9 +4,8 @@ import { Alert, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '../../../core/errors';
-import { createSettingsRepo } from '../../../data/repositories/settingsRepo';
-import { getDb } from '../../../data/db/database';
 import { useAsync } from '../../../features/common/useAsync';
+import { getSetting, setSetting } from '../../../features/library/libraryQueries';
 import { PasswordInput } from '../../../features/vault/PasswordInput';
 import { StrengthMeter } from '../../../features/vault/StrengthMeter';
 import { confirmDestructive, VaultGate } from '../../../features/vault/VaultGate';
@@ -42,7 +41,7 @@ export default function VaultSettingsScreen() {
 function VaultSettings() {
   const { colors, spacing, typography } = useTheme();
   const st = useVaultState();
-  const clip = useAsync(() => createSettingsRepo(getDb()).get('clipboardClearSec'), []);
+  const clip = useAsync(() => getSetting('clipboardClearSec'), []);
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [busy, setBusy] = useState(false);
@@ -97,7 +96,7 @@ function VaultSettings() {
         <Text variant="label" tone="secondary">Очищать буфер обмена через</Text>
         <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
           {CLIPBOARD.map((s) => (
-            <Chip key={s} label={`${s} с`} selected={clip.data === s} onPress={() => run(async () => { await createSettingsRepo(getDb()).set('clipboardClearSec', s); clip.reload(); })} />
+            <Chip key={s} label={`${s} с`} selected={clip.data === s} onPress={() => run(async () => { await setSetting('clipboardClearSec', s); clip.reload(); })} />
           ))}
         </View>
       </Section>

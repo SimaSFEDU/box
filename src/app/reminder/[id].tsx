@@ -5,8 +5,6 @@ import { Alert, ScrollView, Switch, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError, toAppError } from '../../core/errors';
-import { getDb } from '../../data/db/database';
-import { createLibraryRepo } from '../../data/repositories/libraryRepo';
 import type { ReminderInput } from '../../data/repositories/remindersRepo';
 import { formatWhen, presets } from '../../domain/reminders/format';
 import { describeRule, nextOccurrence, type IntervalUnit, type RepeatFreq, type RepeatRule } from '../../domain/reminders/recurrence';
@@ -14,6 +12,7 @@ import { deviceTimeZone, formatLocal, parseLocal, toInstant, toLocal } from '../
 import { collectionsRepo } from '../../features/clips/clipsService';
 import { useAsync } from '../../features/common/useAsync';
 import { useNow } from '../../features/common/useNow';
+import { itemTitle } from '../../features/library/libraryQueries';
 import { ensureNotificationPermission, reconcileReminders, remindersRepo } from '../../features/reminders/scheduler';
 import { Button, Card, Chip, Icon, PressableScale, Text } from '../../ui/components';
 import { useTheme } from '../../ui/theme/ThemeProvider';
@@ -66,7 +65,7 @@ export default function ReminderEditor() {
   const { data: initial, error } = useAsync(async (): Promise<Form & { linked: string | null }> => {
     if (isNew) {
       let linked: string | null = null;
-      if (params.itemId) linked = (await createLibraryRepo(getDb()).list({ limit: 1000 })).find((i) => i.id === params.itemId)?.title ?? null;
+      if (params.itemId) linked = await itemTitle(params.itemId);
       if (params.collectionId) linked = (await collectionsRepo().get(params.collectionId))?.name ?? null;
       return {
         title: params.title ?? (linked ? `Вернуться к «${linked}»` : ''),

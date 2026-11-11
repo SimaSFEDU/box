@@ -14,8 +14,10 @@ Clipbox — local-first Android-приложение: заметки и Markdown
 | [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) | SQLite-схема, индексы, FTS, миграции |
 | [docs/SECURITY_DESIGN.md](docs/SECURITY_DESIGN.md) | Модель угроз, иерархия ключей, восстановление, тест-план |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы, критерии приёмки, риски |
+| [docs/RELEASE.md](docs/RELEASE.md) | Сборки, подпись, чек-лист перед релизом, Data safety |
 
-Статус: Этапы 2–7 завершены (инфраструктура, заметки и Markdown, клипы и Android Share, напоминания, Vault, Private Media и зашифрованный бэкап). Дальше — Этап 8, полировка и релиз.
+Статус: все этапы MVP реализованы; release-сборка с R8 собирается. Перед публикацией —
+ручная проверка на устройствах по [docs/RELEASE.md](docs/RELEASE.md) и e2e-сценарии `.maestro/`.
 
 ## Разработка
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.clipbox.nativemodule" >
+
+    <uses-sdk android:minSdkVersion="29" />
+
+    <application>
+
+        <!-- Private Media: not exported; only /s/ share copies are ever granted (per-URI, read-only). -->
+        <provider
+            android:name="app.clipbox.nativemodule.SecureMediaProvider"
+            android:authorities="${applicationId}.securemedia"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
+
+</manifest>

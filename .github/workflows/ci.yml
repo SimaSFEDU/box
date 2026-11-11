@@ -40,7 +40,7 @@ jobs:
         working-directory: modules/clipbox-native/jvm-tests
 
   android:
-    name: Android build (native module compile + unit tests + debug APK)
+    name: Android build (native module unit tests + R8 release APK)
     runs-on: ubuntu-latest
     needs: [js, crypto-jvm]
     steps:
@@ -59,6 +59,6 @@ jobs:
       - name: Native module unit tests
         run: ./gradlew :clipbox-native:testDebugUnitTest --no-daemon
         working-directory: android
-      - name: Debug APK (x86_64 only, for CI speed)
-        run: ./gradlew :app:assembleDebug --no-daemon -PreactNativeArchitectures=x86_64
+      - name: Release APK with R8 (arm64 only, for CI speed) — catches shrinker/keep-rule regressions
+        run: ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
         working-directory: android

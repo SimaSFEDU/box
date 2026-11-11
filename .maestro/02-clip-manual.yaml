@@ -1,0 +1,16 @@
+appId: app.clipbox
+name: Save a clip manually; it is searchable and opens
+---
+- launchApp:
+    clearState: true
+- tapOn: "Создать"
+- tapOn: "Клип"
+- tapOn: "Ссылка"
+- inputText: "https://example.com/e2e-article"
+- tapOn: "Сохранить"
+- assertVisible: "Открыть"
+- tapOn: "Назад"
+- tapOn: "Library"
+- tapOn: "Поиск"
+- inputText: "example"
+- assertVisible: ".*example.*"

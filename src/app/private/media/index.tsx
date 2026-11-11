@@ -196,10 +196,11 @@ function Gallery() {
           <View style={{ flex: 1 }}>
             <Button label="Отправить" icon="send" onPress={() => shareMedia(selectedItems()).catch(fail)} />
           </View>
-          <Button label="" icon="folder" variant="secondary" onPress={() => setSheet('move')} />
-          <Button label="" icon="star" variant="secondary" onPress={() => { const s = selectedItems(); const fav = !s.every((i) => i.favorite); Promise.all(s.map((i) => updateMeta(i, { favorite: fav }))).then(done).catch(fail); }} />
+          <Button label="" accessibilityLabel="Переместить" icon="folder" variant="secondary" onPress={() => setSheet('move')} />
+          <Button label="" accessibilityLabel="Избранное" icon="star" variant="secondary" onPress={() => { const s = selectedItems(); const fav = !s.every((i) => i.favorite); Promise.all(s.map((i) => updateMeta(i, { favorite: fav }))).then(done).catch(fail); }} />
           <Button
             label=""
+            accessibilityLabel="Удалить"
             icon="trash-2"
             variant="danger"
             onPress={() => confirmDestructive(`Удалить ${selected.size}?`, 'Зашифрованные файлы будут удалены без возможности восстановления.', 'Удалить', () => deleteMedia(selectedItems()).then(done).catch(fail))}
