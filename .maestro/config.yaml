@@ -1,0 +1,7 @@
+# Maestro e2e flows — run on a device/emulator with a dev or preview build installed:
+#   maestro test .maestro
+# Flows are independent; each starts from a clean app state.
+flows:
+  - "*.yaml"
+excludeTags:
+  - manual

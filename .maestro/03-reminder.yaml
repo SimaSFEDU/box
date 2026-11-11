@@ -1,0 +1,20 @@
+appId: app.clipbox
+name: Create a repeating reminder and complete it
+---
+- launchApp:
+    clearState: true
+- tapOn: "Создать"
+- tapOn: "Напоминание"
+- tapOn: "Название"
+- inputText: "E2E reminder"
+- tapOn: "Завтра утром"
+- tapOn: "Каждый день"
+- tapOn: "Сохранить"
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+- tapOn: "Reminders"
+- assertVisible: "E2E reminder"
+- assertVisible: ".*Каждый день.*"

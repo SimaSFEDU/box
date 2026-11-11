@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.clipbox.nativemodule.crypto.MediaCryptoTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-11T14:32:54.206Z" hostname="vm" time="0.256">
+  <properties/>
+  <testcase name="thumbnailsBoundToId" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.006"/>
+  <testcase name="sizeLimitAbortsImport" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.002"/>
+  <testcase name="streamingRoundTripAcrossSegmentsWithHashAndSize" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.092"/>
+  <testcase name="wrongIdOrKeyOrTamperingFails" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.011"/>
+  <testcase name="seekableChannelSupportsRandomAccess" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.14"/>
+  <testcase name="sniffsCommonFormatsAndIgnoresUntrustedMime" classname="app.clipbox.nativemodule.crypto.MediaCryptoTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

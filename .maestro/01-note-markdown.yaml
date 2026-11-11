@@ -1,0 +1,21 @@
+appId: app.clipbox
+name: Create a Markdown note, preview, toggle task, autosave survives restart
+---
+- launchApp:
+    clearState: true
+- tapOn: "Создать"
+- tapOn: "Markdown"
+- tapOn: "Заголовок заметки"
+- inputText: "E2E Note"
+- tapOn: "Текст заметки"
+- inputText: "# Heading\n- [ ] first task\n\n| a | b |\n|---|---|\n| 1 | 2 |"
+- tapOn: "Просмотр"
+- assertVisible: "Heading"
+- assertVisible: "first task"
+- tapOn: "Назад"
+- stopApp
+- launchApp
+- tapOn: "Library"
+- assertVisible: "E2E Note"
+- tapOn: "E2E Note"
+- assertVisible: "# Heading.*"

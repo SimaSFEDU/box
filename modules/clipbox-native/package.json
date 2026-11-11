@@ -1,0 +1,8 @@
+{
+  "name": "clipbox-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clipbox Android native layer: secure window, (later) keystore crypto, biometric unlock, encrypted media, share intent.",
+  "main": "index.ts",
+  "types": "index.ts"
+}

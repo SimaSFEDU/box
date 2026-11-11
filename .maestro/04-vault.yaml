@@ -1,0 +1,48 @@
+appId: app.clipbox
+name: Vault setup, add a login, lock on background, unlock with password
+tags:
+  - security
+---
+- launchApp:
+    clearState: true
+- tapOn: "Settings"
+- tapOn: "Vault и приватные данные"
+- tapOn: "Vault"
+- tapOn: "Я понимаю"
+- tapOn: "Продолжить"
+- tapOn: "Мастер-пароль"
+- inputText: "correct horse battery staple 9"
+- tapOn: "Повтор пароля"
+- inputText: "correct horse battery staple 9"
+- tapOn: "Ключ восстановления"
+- tapOn: "Подтверждаю отказ"
+- tapOn: "Создать Vault"
+- extendedWaitUntil:
+    visible: ".*биометри.*|Готово|Не сейчас"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: "Не сейчас"
+    commands:
+      - tapOn: "Не сейчас"
+- runFlow:
+    when:
+      visible: "Готово"
+    commands:
+      - tapOn: "Готово"
+- tapOn: "Добавить запись"
+- tapOn: "Логин"
+- tapOn: "Название"
+- inputText: "E2E GitHub"
+- tapOn: "Логин"
+- inputText: "octocat"
+- tapOn: "Сохранить"
+- assertVisible: "E2E GitHub"
+# Background → Vault must lock immediately.
+- pressKey: Home
+- launchApp
+- assertVisible: "Vault заблокирован"
+- tapOn: "Мастер-пароль"
+- inputText: "correct horse battery staple 9"
+- tapOn: "Открыть"
+- assertVisible: "E2E GitHub"
