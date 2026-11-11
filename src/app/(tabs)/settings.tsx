@@ -1,9 +1,11 @@
 import Constants from 'expo-constants';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Linking, View } from 'react-native';
 
 import { toAppError } from '../../core/errors';
 import type { SettingsShape } from '../../data/repositories/settingsRepo';
+import { useAsync } from '../../features/common/useAsync';
+import { exactAlarmsAllowed, ensureNotificationPermission, notificationPermission, reconcileReminders, requestExactAlarms } from '../../features/reminders/scheduler';
 import { exportNotesArchive, importFromFiles, importFromFolder, type ImportResult } from '../../features/notes/archiveService';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { Button, Card, Screen, Section, SegmentedControl, Text } from '../../ui/components';
@@ -18,6 +20,18 @@ export default function SettingsScreen() {
   const themeMode = useSettingsStore((s) => s.settings.themeMode);
   const update = useSettingsStore((s) => s.update);
   const [busy, setBusy] = useState<null | 'export' | 'files' | 'folder'>(null);
+  const notif = useAsync(async () => ({ permission: await notificationPermission(), exact: await exactAlarmsAllowed() }), []);
+  const fixNotifications = async () => {
+    const p = await ensureNotificationPermission();
+    if (p === 'denied') await Linking.openSettings();
+    await reconcileReminders();
+    notif.reload();
+  };
+  const fixExact = async () => {
+    await requestExactAlarms();
+    await reconcileReminders();
+    notif.reload();
+  };
 
   const report = (r: ImportResult | null) => {
     if (!r) return;
@@ -39,6 +53,20 @@ export default function SettingsScreen() {
     <Screen title="Settings">
       <Section title="Оформление">
         <SegmentedControl segments={THEMES} value={themeMode} onChange={(v) => update('themeMode', v)} />
+      </Section>
+      <Section title="Напоминания">
+        <Card style={{ gap: 12 }}>
+          <Text>
+            Уведомления: {notif.data?.permission === 'granted' ? 'разрешены' : notif.data?.permission === 'denied' ? 'запрещены' : 'не настроены'}
+          </Text>
+          {notif.data && notif.data.permission !== 'granted' ? <Button label="Разрешить уведомления" icon="bell" variant="secondary" onPress={fixNotifications} /> : null}
+          <Text tone="secondary">
+            {notif.data?.exact
+              ? 'Точное время включено: напоминания приходят минута в минуту.'
+              : 'Без разрешения «Будильники и напоминания» Android может присылать уведомления с задержкой в несколько минут.'}
+          </Text>
+          {notif.data && !notif.data.exact ? <Button label="Включить точное время" icon="clock" variant="secondary" onPress={fixExact} /> : null}
+        </Card>
       </Section>
       <Section title="Данные">
         <Card style={{ gap: 12 }}>

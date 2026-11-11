@@ -196,6 +196,12 @@ export default function NoteScreen() {
             onPress: () => notesRepo().setFlag(id, 'archived', !note?.archived).then(ed.reload).catch((e) => fail(e, 'Не удалось изменить')),
           },
           {
+            key: 'remind',
+            label: 'Напомнить',
+            icon: 'bell',
+            onPress: () => router.push({ pathname: '/reminder/[id]', params: { id: 'new', itemId: id } }),
+          },
+          {
             key: 'share',
             label: 'Экспорт .md',
             icon: 'share',

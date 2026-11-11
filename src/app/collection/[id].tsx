@@ -61,6 +61,7 @@ export default function CollectionScreen() {
         visible={menu}
         onClose={() => setMenu(false)}
         actions={[
+          { key: 'remind', label: 'Напомнить о коллекции', icon: 'bell', onPress: () => router.push({ pathname: '/reminder/[id]', params: { id: 'new', collectionId: id } }) },
           {
             key: 'delete',
             label: 'Удалить коллекцию',

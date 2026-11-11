@@ -3,7 +3,10 @@ import { useCallback, useEffect } from 'react';
 import { View } from 'react-native';
 
 import type { HomeBlockId } from '../../data/repositories/settingsRepo';
+import { useNow } from '../../features/common/useNow';
 import { openItem } from '../../features/library/navigation';
+import { ReminderRow } from '../../features/reminders/ReminderRow';
+import { reconcileReminders, remindersRepo } from '../../features/reminders/scheduler';
 import { useDataVersion } from '../../stores/dataVersion';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -24,6 +27,7 @@ export default function HomeScreen() {
   const blocks = useSettingsStore((s) => s.settings.homeBlocks);
 
   const version = useDataVersion((s) => s.version);
+  const now = useNow();
   useFocusEffect(
     useCallback(() => {
       refreshHome();
@@ -59,7 +63,21 @@ export default function HomeScreen() {
           </Section>
         ) : null;
       case 'reminders':
-        return null; // Populated in stage 5 (Reminders); hidden instead of showing placeholder data.
+        return home.reminders.length > 0 ? (
+          <Section key={id} title="Напоминания" action={<Text variant="label" tone="primary" onPress={() => router.navigate('/reminders')}>Все</Text>}>
+            <Card style={{ paddingVertical: spacing.xs }}>
+              {home.reminders.map((r) => (
+                <ReminderRow
+                  key={r.id}
+                  r={r}
+                  now={now}
+                  onPress={() => router.push({ pathname: '/reminder/[id]', params: { id: r.id } })}
+                  onToggle={() => void remindersRepo().complete(r.id, r.nextFireAt ?? now).then(reconcileReminders)}
+                />
+              ))}
+            </Card>
+          </Section>
+        ) : null;
       case 'recent':
         return home.recent.length > 0 ? (
           <Section key={id} title="Недавние">

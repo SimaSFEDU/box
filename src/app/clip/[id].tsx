@@ -163,6 +163,7 @@ export default function ClipScreen() {
         visible={menu}
         onClose={() => setMenu(false)}
         actions={[
+          { key: 'remind', label: 'Напомнить', icon: 'bell', onPress: () => router.push({ pathname: '/reminder/[id]', params: { id: 'new', itemId: id } }) },
           { key: 'archive', label: clip.archived ? 'Вернуть из архива' : 'В архив', icon: 'archive', onPress: () => act(clipsRepo().setFlag(id, 'archived', !clip.archived)) },
           ...(clip.url ? [{ key: 'share', label: 'Поделиться ссылкой', icon: 'share-2' as const, onPress: () => Share.share({ message: clip.url! }).catch(fail) }] : []),
           {

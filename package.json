@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@react-native-community/datetimepicker": "9.2.1",
     "@shopify/flash-list": "2.3.2",
     "babel-preset-expo": "~58.0.0",
     "expo": "~58.0.23",
@@ -14,6 +15,7 @@
     "expo-file-system": "~58.0.13",
     "expo-font": "~58.0.11",
     "expo-linking": "~58.0.16",
+    "expo-notifications": "~58.1.8",
     "expo-router": "~58.0.30",
     "expo-sharing": "~58.0.22",
     "expo-splash-screen": "~58.0.13",
