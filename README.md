@@ -15,4 +15,20 @@ Clipbox — local-first Android-приложение: заметки и Markdown
 | [docs/SECURITY_DESIGN.md](docs/SECURITY_DESIGN.md) | Модель угроз, иерархия ключей, восстановление, тест-план |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы, критерии приёмки, риски |
 
-Статус: архитектура зафиксирована, код ещё не написан (Этап 2 начинается после согласования).
+Статус: Этап 2 (базовая инфраструктура) завершён.
+
+## Разработка
+
+Нужен Android Development Build — Expo Go не поддерживается (свой нативный модуль).
+
+```bash
+npm install
+npx expo run:android            # локально, нужен Android SDK
+# или: npx eas-cli@latest build --profile development --platform android
+npm start                       # Metro для dev client
+npm run check                   # typecheck + lint + tests
+```
+
+Структура: `src/app` — экраны (Expo Router), `src/ui` — дизайн-система, `src/features` — хуки и
+сценарии, `src/stores` — Zustand, `src/data` — SQLite, миграции, репозитории, файлы,
+`src/core` — ошибки, логгер, ULID, `modules/clipbox-native` — Kotlin-модуль, `tests/` — Jest.

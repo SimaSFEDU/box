@@ -1,0 +1,19 @@
+import { getRandomBytes } from 'expo-crypto';
+
+import { createLogger } from '../../core/logger';
+import { setRandomSource } from '../../core/ulid';
+import { initDatabase } from '../../data/db/database';
+import { ensureStorage, runFileGc } from '../../data/files/storage';
+import { useSettingsStore } from '../../stores/settingsStore';
+
+const log = createLogger('bootstrap');
+
+/** App startup sequence (docs/ARCHITECTURE.md §6.1). Throws AppError on fatal failure. */
+export async function bootstrap(): Promise<void> {
+  setRandomSource((n) => getRandomBytes(n));
+  const db = await initDatabase();
+  ensureStorage();
+  await useSettingsStore.getState().load();
+  // Non-critical housekeeping must never block startup.
+  runFileGc(db).catch((e) => log.warn('file gc failed', e));
+}

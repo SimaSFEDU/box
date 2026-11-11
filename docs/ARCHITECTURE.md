@@ -36,7 +36,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ app/ (Expo Router screens)  — только композиция UI       │
+│ src/app/ (Expo Router screens) — только композиция UI    │
 ├──────────────────────────────────────────────────────────┤
 │ src/ui/  design system: tokens, theme, primitives        │
 │ src/features/<feature>/components, hooks                 │
@@ -63,15 +63,17 @@
 ```
 
 Правила (проверяются ESLint `no-restricted-imports`):
-- `app/` и `src/ui` не импортируют `src/data` напрямую — только хуки/сервисы из `features`/`domain`.
+- `src/app/` и `src/ui` не импортируют `src/data/db` напрямую — только хуки/сервисы из `features`/`domain`.
 - `src/domain` не импортирует React.
 - Только `src/secure` импортирует `clipbox-native` crypto/vault/media API.
 - Ни один JS-модуль не реализует криптографию.
 
 ## 3. Структура каталогов
 
+Expo SDK 58 размещает маршруты в `src/app/` (не в корневом `app/`).
+
 ```
-app/
+src/app/
   _layout.tsx                # providers, theme, db init, share-intent listener
   (tabs)/_layout.tsx         # bottom tabs + центральная кнопка
   (tabs)/index.tsx           # Home
@@ -157,8 +159,8 @@ ID — ULID (сортируемые по времени, генерируютс�
 **редактор логов**, который не принимает объекты из `src/secure` (тип `Redacted`).
 
 ### 6.5 Поиск
-FTS5 `search_index(item_id, kind, title, body, tags)` с триггерами на notes/clips/reminders/
-collections/tags. Токенайзер `unicode61 remove_diacritics 2` (кириллица ок). Запрос: экранирование,
+FTS5 `search_items` (rowid = `library_items.rowid`) с триггерами на library_items/notes/clips/
+item_tags/tags; reminders/collections/tags — `LIKE` (см. DATABASE_SCHEMA). Токенайзер `unicode61 remove_diacritics 2` (кириллица ок). Запрос: экранирование,
 префикс `*`, `bm25` + бонус за свежесть.
 
 ## 7. Напоминания (Android-специфика)
@@ -227,3 +229,20 @@ setSecureWindow(on: boolean): void
 5. **Tink вместо ручного AES-GCM.** Tink — проверенная библиотека Google, даёт streaming AEAD с
    произвольным доступом (перемотка видео) и защиту от ошибок nonce. Ручной формат был бы
    «самописной криптографией» в смысле протокола.
+
+## 11. Фактическое состояние (после Этапа 2)
+
+- Expo SDK 58, React Native 0.88, React 19.3, TypeScript 6 (`strict`, `noUncheckedIndexedAccess`).
+- `src/core` — `Result`, `AppError`, логгер с `Redacted`, ULID (источник случайности внедряется:
+  `expo-crypto` в приложении, `crypto` Node в тестах).
+- `src/data/db` — интерфейс `SqlDb`, адаптер expo-sqlite; тесты используют better-sqlite3 с тем же SQL.
+- `src/data/files/storage.ts` — атомарная запись (temp → rename), `.nomedia`, очередь `file_gc`.
+- `src/stores` — Zustand только для настроек и кэша Home; источник истины — SQLite.
+- `modules/clipbox-native` — локальный Expo-модуль (autolinking из `modules/`), пока только
+  `setSecureWindow` (FLAG_SECURE + `setRecentsScreenshotEnabled`). Крипто-API добавляются в Этапе 6.
+- Тесты: проект `logic` (node + настоящий SQLite) и `ui` (jest-expo + Testing Library).
+  Reanimated в UI-тестах заменён минимальным собственным моком: официальный мок этой версии
+  инициализирует нативные worklets под Jest.
+- Нельзя проверить в облачном контейнере: компиляцию Kotlin/Gradle (нет Android SDK) и запуск на
+  устройстве. Проверено: `tsc`, ESLint, Jest, `expo export` (Android JS-бандл), `expo prebuild`
+  (манифест, autolinking модуля, FTS-флаг).

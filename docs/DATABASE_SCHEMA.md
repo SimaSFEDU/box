@@ -134,14 +134,21 @@ CREATE TABLE file_gc (rel_path TEXT PRIMARY KEY, queued_at INTEGER NOT NULL) WIT
 ### FTS (только Standard)
 
 ```sql
-CREATE VIRTUAL TABLE search_index USING fts5(
-  ref_id UNINDEXED, ref_kind UNINDEXED,   -- 'note','clip','reminder','collection','tag'
-  title, body, extra,                      -- extra: теги, url host, site_name
+CREATE VIRTUAL TABLE search_items USING fts5(
+  title, body, extra,                      -- extra: url, site_name, имена тегов
   tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3'
 );
+-- rowid = library_items.rowid → удаление/обновление по rowid без сканирования.
+CREATE VIEW v_search_source AS ...;        -- собирает title/body/extra для элемента
 ```
-Поддерживается триггерами AFTER INSERT/UPDATE/DELETE на `library_items`, `notes`, `clips`,
-`reminders`, `collections`, `tags`, `item_tags`. Удалённые (`deleted_at`) из индекса убираются.
+Триггеры на `library_items`, `notes`, `clips`, `item_tags`, `tags(name)` делают
+`DELETE ... WHERE rowid = X; INSERT ... SELECT FROM v_search_source WHERE id = X`, поэтому индекс
+не может разойтись с данными, а элементы с `deleted_at` выпадают из поиска автоматически.
+
+Решение (отклонение от v0 документа): Reminders, Collections и Tags — маленькие таблицы, они ищутся
+через `LIKE` в том же поисковом сервисе; отдельный FTS для них не окупается.
+Пользовательский ввод экранируется (`toFtsQuery`: каждый токен в кавычках + префикс `*`),
+поэтому синтаксис FTS5 из запроса не интерпретируется (покрыто тестом).
 
 ## 2. Защищённый уровень
 
