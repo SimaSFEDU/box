@@ -21,7 +21,7 @@ module.exports = defineConfig([
     files: ['src/**'],
     ignores: ['src/secure/**'],
     rules: {
-      'no-restricted-imports': ['error', { paths: [{ name: 'clipbox-native', importNames: ['vault', 'media', 'keys'], message: 'Only src/secure may use protected native APIs.' }] }],
+      'no-restricted-imports': ['error', { paths: [{ name: 'clipbox-native', importNames: ['ClipboxVault'], message: 'Only src/secure may use protected native APIs.' }] }],
     },
   },
 ]);

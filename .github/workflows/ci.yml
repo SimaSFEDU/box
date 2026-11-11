@@ -5,7 +5,8 @@ on:
   pull_request:
 
 jobs:
-  check:
+  js:
+    name: TypeScript, lint, tests, bundle
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,3 +23,42 @@ jobs:
         run: npx expo export --platform android --output-dir dist
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  crypto-jvm:
+    name: Crypto core (JVM unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - run: gradle test --no-daemon
+        working-directory: modules/clipbox-native/jvm-tests
+
+  android:
+    name: Android build (native module compile + unit tests + debug APK)
+    runs-on: ubuntu-latest
+    needs: [js, crypto-jvm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+      - name: Native module unit tests
+        run: ./gradlew :clipbox-native:testDebugUnitTest --no-daemon
+        working-directory: android
+      - name: Debug APK (x86_64 only, for CI speed)
+        run: ./gradlew :app:assembleDebug --no-daemon -PreactNativeArchitectures=x86_64
+        working-directory: android

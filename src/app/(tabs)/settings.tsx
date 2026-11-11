@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, View } from 'react-native';
 
@@ -53,6 +54,9 @@ export default function SettingsScreen() {
     <Screen title="Settings">
       <Section title="Оформление">
         <SegmentedControl segments={THEMES} value={themeMode} onChange={(v) => update('themeMode', v)} />
+      </Section>
+      <Section title="Private space">
+        <Button label="Vault и приватные данные" icon="lock" variant="secondary" onPress={() => router.push('/private')} />
       </Section>
       <Section title="Напоминания">
         <Card style={{ gap: 12 }}>

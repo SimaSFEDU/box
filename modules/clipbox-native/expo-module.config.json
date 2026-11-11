@@ -1,6 +1,6 @@
 {
   "platforms": ["android"],
   "android": {
-    "modules": ["app.clipbox.nativemodule.ClipboxSecureUiModule"]
+    "modules": ["app.clipbox.nativemodule.ClipboxSecureUiModule", "app.clipbox.nativemodule.ClipboxVaultModule"]
   }
 }

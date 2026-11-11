@@ -15,7 +15,7 @@ Clipbox — local-first Android-приложение: заметки и Markdown
 | [docs/SECURITY_DESIGN.md](docs/SECURITY_DESIGN.md) | Модель угроз, иерархия ключей, восстановление, тест-план |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы, критерии приёмки, риски |
 
-Статус: Этапы 2–5 (инфраструктура, заметки и Markdown, клипы и Android Share, напоминания) завершены.
+Статус: Этапы 2–6 (инфраструктура, заметки и Markdown, клипы и Android Share, напоминания, Vault) завершены.
 
 ## Разработка
 
@@ -28,6 +28,7 @@ npx expo run:android            # локально, нужен Android SDK
 npm start                       # Metro для dev client
 npm run check                   # preview bundle up-to-date + typecheck + lint + tests
 npm run build:preview           # пересобрать офлайн-бандл Markdown-превью
+(cd modules/clipbox-native/jvm-tests && gradle test)   # тесты криптоядра на JVM, без Android SDK
 ```
 
 Структура: `src/app` — экраны (Expo Router), `src/ui` — дизайн-система, `src/features` — хуки и

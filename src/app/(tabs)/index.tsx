@@ -10,7 +10,7 @@ import { reconcileReminders, remindersRepo } from '../../features/reminders/sche
 import { useDataVersion } from '../../stores/dataVersion';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { Card, EmptyState, ErrorView, Icon, ItemRow, Screen, Section, Text } from '../../ui/components';
+import { Card, EmptyState, ErrorView, Icon, ItemRow, PressableScale, Screen, Section, Text } from '../../ui/components';
 import { useTheme } from '../../ui/theme/ThemeProvider';
 
 function greeting(d = new Date()): string {
@@ -100,15 +100,18 @@ export default function HomeScreen() {
         ) : null;
       case 'private':
         return (
-          <Card key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <Icon name="lock" color={colors.vault} />
-            <View style={{ flex: 1 }}>
-              <Text variant="heading">Private space</Text>
-              <Text variant="caption" tone="secondary">
-                Vault и Private Media — в разработке
-              </Text>
-            </View>
-          </Card>
+          <PressableScale key={id} accessibilityLabel="Private space" onPress={() => router.push('/private')}>
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <Icon name="lock" color={colors.vault} />
+              <View style={{ flex: 1 }}>
+                <Text variant="heading">Private space</Text>
+                <Text variant="caption" tone="secondary">
+                  Vault: пароли, ключи и секреты
+                </Text>
+              </View>
+              <Icon name="chevron-right" color={colors.secondary} />
+            </Card>
+          </PressableScale>
         );
     }
   };

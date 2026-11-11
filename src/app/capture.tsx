@@ -15,7 +15,7 @@ interface CaptureOption {
   label: string;
   icon: IconName;
   /** What to create; `null` = module not built yet (shown disabled, never faked). */
-  note: NoteFormat | 'clip' | 'reminder' | null;
+  note: NoteFormat | 'clip' | 'reminder' | 'vault' | null;
   accent?: 'vault' | 'media';
 }
 
@@ -26,17 +26,21 @@ const OPTIONS: CaptureOption[] = [
   { key: 'clip', label: 'Клип', icon: 'link', note: 'clip' },
   { key: 'reminder', label: 'Напоминание', icon: 'bell', note: 'reminder' },
   { key: 'media', label: 'Private Media', icon: 'image', note: null, accent: 'media' },
-  { key: 'vault', label: 'Vault', icon: 'lock', note: null, accent: 'vault' },
+  { key: 'vault', label: 'Vault', icon: 'lock', note: 'vault', accent: 'vault' },
 ];
 
 export default function CaptureSheet() {
   const { colors, spacing, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
-  const create = async (format: NoteFormat | 'clip' | 'reminder') => {
+  const create = async (format: NoteFormat | 'clip' | 'reminder' | 'vault') => {
     if (busy) return;
     if (format === 'clip') {
       router.replace('/clip/new');
+      return;
+    }
+    if (format === 'vault') {
+      router.replace('/private/vault');
       return;
     }
     if (format === 'reminder') {

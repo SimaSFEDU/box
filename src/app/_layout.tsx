@@ -31,6 +31,7 @@ function Navigator() {
         <Stack.Screen name="share" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
         <Stack.Screen name="expo-sharing" />
         <Stack.Screen name="reminder/[id]" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="private" options={{ animation: 'fade' }} />
         <Stack.Screen
           name="capture"
           options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}

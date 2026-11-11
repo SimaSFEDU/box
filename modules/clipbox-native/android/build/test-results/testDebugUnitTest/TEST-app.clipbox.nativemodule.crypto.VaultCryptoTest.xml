@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.clipbox.nativemodule.crypto.VaultCryptoTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-11T13:37:23.836Z" hostname="vm" time="0.481">
+  <properties/>
+  <testcase name="argon2idMatchesRfc9106StyleKnownAnswer" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.248"/>
+  <testcase name="argon2idIsDeterministicPerSaltAndSensitiveToInputs" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.034"/>
+  <testcase name="wrapUnwrapWithAssociatedData" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.02"/>
+  <testcase name="dekCheckDetectsWrongKeyAndModule" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.008"/>
+  <testcase name="passwordGeneratorHonoursOptions" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.016"/>
+  <testcase name="fullFlowPasswordRecoveryAndPasswordChangeKeepTheDek" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.036"/>
+  <testcase name="recoveryKeyEncodingIsTolerantAndChecksummed" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.006"/>
+  <testcase name="recoveryKekIsPerModule" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.0"/>
+  <testcase name="kdfParamsRoundTripAndRejectWeakValues" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.008"/>
+  <testcase name="generatorIsRoughlyUniform" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.1"/>
+  <testcase name="recordsAreBoundToTheirId" classname="app.clipbox.nativemodule.crypto.VaultCryptoTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

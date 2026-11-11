@@ -82,6 +82,14 @@
           "color": "#526FE0",
           "enableBackgroundRemoteNotifications": false
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 29
+          }
+        }
       ]
     ],
     "experiments": {
