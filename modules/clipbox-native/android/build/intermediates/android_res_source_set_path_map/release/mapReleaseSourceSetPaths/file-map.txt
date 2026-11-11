@@ -1,9 +1,0 @@
-app.clipbox.nativemodule.clipbox-native-pngs-0 /home/user/box/modules/clipbox-native/android/build/generated/res/pngs/release
-app.clipbox.nativemodule.clipbox-native-updated_navigation_xml-1 /home/user/box/modules/clipbox-native/android/build/generated/updated_navigation_xml/release
-app.clipbox.nativemodule.clipbox-native-mergeReleaseResources-2 /home/user/box/modules/clipbox-native/android/build/intermediates/incremental/release/mergeReleaseResources/merged.dir
-app.clipbox.nativemodule.clipbox-native-mergeReleaseResources-3 /home/user/box/modules/clipbox-native/android/build/intermediates/incremental/release/mergeReleaseResources/stripped.dir
-app.clipbox.nativemodule.clipbox-native-release-4 /home/user/box/modules/clipbox-native/android/build/intermediates/merged_res/release/mergeReleaseResources
-app.clipbox.nativemodule.clipbox-native-release-5 /home/user/box/modules/clipbox-native/android/build/intermediates/packaged_res/release/packageReleaseResources
-app.clipbox.nativemodule.clipbox-native-main-6 /home/user/box/modules/clipbox-native/android/src/main/res
-app.clipbox.nativemodule.clipbox-native-release-7 /home/user/box/modules/clipbox-native/android/src/release/res
-gradleHome-0 /root/.gradle
