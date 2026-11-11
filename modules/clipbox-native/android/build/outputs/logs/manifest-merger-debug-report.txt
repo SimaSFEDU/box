@@ -1,0 +1,16 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:13-83
+INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:13-83
+	package
+		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+	xmlns:android
+		ADDED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml:2:23-81
+uses-sdk
+INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml reason: use-sdk injection requested
+INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+	android:targetSdkVersion
+		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml
+	android:minSdkVersion
+		INJECTED from /home/user/box/modules/clipbox-native/android/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest12620949032350752614.xml

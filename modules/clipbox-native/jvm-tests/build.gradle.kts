@@ -12,13 +12,17 @@ kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarg
 java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 
 sourceSets {
-  main { kotlin.srcDir("../android/src/main/java/app/clipbox/nativemodule/crypto") }
+  main {
+    kotlin.srcDir("../android/src/main/java/app/clipbox/nativemodule/crypto")
+    // Android-only files (Keystore, BiometricPrompt) are compiled and tested in the Android build.
+    kotlin.exclude("**/KeystoreKeys.kt", "**/BiometricGate.kt")
+  }
   test { kotlin.srcDir("../android/src/test/java/app/clipbox/nativemodule/crypto") }
 }
 
 dependencies {
   implementation("com.google.crypto.tink:tink:1.24.0")
-  implementation("org.bouncycastle:bcprov-jdk18on:1.87")
+  implementation("org.bouncycastle:bcprov-jdk18on:1.86")
   testImplementation("junit:junit:4.13.2")
 }
 
